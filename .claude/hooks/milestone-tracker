@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# ====================================================================
+# Claude Hook: PostToolUse (里程碑追踪)
+# 触发时机: Task 工具完成后
+# 作用: 自动检测并提醒记录重要开发里程碑到 Memory MCP
+# ====================================================================
+
+# 读取工具结果
+TOOL_RESULT=$(cat)
+
+# 检测是否是重要里程碑 (Task 完成、功能开发完成等)
+if echo "$TOOL_RESULT" | grep -qiE "(Task (complete|done)|功能完成|已完成|部署成功|集成完成|Phase.*完成)"; then
+    # 提醒记录到 Memory
+    cat <<EOF
+$TOOL_RESULT
+
+📝 [Memory MCP 提醒] 检测到重要里程碑!建议记录到记忆体:
+
+1. 使用 mcp__memory__create_entities 创建实体:
+   - entityType: "milestone" 或 "feature" 或 "decision"
+   - name: [本次完成的功能/决策名称]
+   - observations: [关键信息、技术要点、遇到的问题]
+
+2. 使用 mcp__memory__create_relations 建立关系:
+   - from: 本次实体
+   - to: 相关的模块/功能
+   - relationType: "implements" / "depends_on" / "resolves"
+
+示例:
+mcp__memory__create_entities({
+  "entities": [{
+    "name": "Phase3-多策略支持",
+    "entityType": "milestone",
+    "observations": [
+      "完成时间: $(date +%Y-%m-%d)",
+      "实现了策略参数动态配置",
+      "使用了非侵入式集成模式",
+      "遇到问题: 极星平台参数传递限制",
+      "解决方案: 使用环境变量 + 代码默认值"
+    ]
+  }]
+})
+EOF
+
+else
+    # 非里程碑,直接透传
+    echo "$TOOL_RESULT"
+fi

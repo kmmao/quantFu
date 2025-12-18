@@ -160,6 +160,10 @@ quantFu/
 ├── database/          # 数据库相关
 │   ├── migrations/    # 数据库迁移
 │   └── seed/          # 初始数据
+├── docs/              # 项目文档
+│   ├── development/   # 开发过程文档
+│   ├── deployment/    # 部署指南
+│   └── integration/   # 集成指南
 ├── docker-compose.yml # Docker编排文件
 └── README.md
 ```
@@ -213,22 +217,24 @@ GET  /api/positions/{account_id}  # 查询持仓
 WS   /ws/positions            # WebSocket实时推送
 ```
 
-## 📱 极星策略改造
+## 📚 文档索引
 
-### 方式1:修改现有v12.py
+### 快速参考
+- [项目概览](PROJECT_SUMMARY.md) - 系统架构与技术栈
+- [快速开始](QUICKSTART.md) - 5分钟上手指南
+- [项目状态](docs/PROJECT_STATUS.md) - 当前开发进度
 
-在 `v12.py` 顶部增加:
-```python
-from data_pusher import push_trade, push_position_snapshot
-```
+### 集成指南
+- [极星策略集成](docs/integration/POLAR_INTEGRATION.md) - v12.py 策略改造
+- [V12 集成指南](docs/integration/V12_INTEGRATION_GUIDE.md) - 详细集成步骤
+- [V12 可视化指南](docs/integration/V12_INTEGRATION_VISUAL_GUIDE.md) - 图解集成过程
 
-在 `market_order()` 和 `close_postion()` 函数中增加推送调用。
+### 部署运维
+- [部署指南](docs/deployment/DEPLOYMENT.md) - 生产环境部署
 
-详见:`docs/极星策略改造指南.md`
-
-### 方式2:创建新版本v12-fi.py
-
-复制v12.py为v12-fi.py,在新文件中集成推送逻辑。
+### 开发历史
+- [Phase 2 开发](docs/development/phase2/) - 基础功能开发记录
+- [Phase 3 开发](docs/development/phase3/) - 高级功能开发记录
 
 ## 🚨 常见问题
 
