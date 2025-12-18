@@ -13,7 +13,7 @@
 
 ```bash
 # 1. 进入项目目录
-cd /Users/allen/Documents/GitHub/quantFu
+cd ~/Documents/GitHub/quantFu
 
 # 2. 复制环境变量
 cp .env.example .env

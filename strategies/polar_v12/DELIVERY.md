@@ -107,7 +107,7 @@ DELIVERY.md:        100 行
 ### Step 1: 启动 QuantFu 后端
 
 ```bash
-cd /Users/allen/Documents/GitHub/quantFu
+cd ~/Documents/GitHub/quantFu
 ./scripts/start.sh
 ```
 
@@ -156,7 +156,7 @@ http://localhost:3000
 ### 主要文件
 
 ```
-/Users/allen/Documents/GitHub/quantFu/
+~/Documents/GitHub/quantFu/
 ├── strategies/
 │   ├── README.md                    # 策略集成规范
 │   └── polar_v12/

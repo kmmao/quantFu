@@ -228,5 +228,5 @@ if __name__ == '__main__':
     # 运行测试
     # pytest backend/tests/test_api.py -v
     print("使用 pytest 运行测试:")
-    print("  cd /Users/allen/Documents/GitHub/quantFu")
+    print("  cd ~/Documents/GitHub/quantFu")
     print("  pytest backend/tests/test_api.py -v")

@@ -66,7 +66,7 @@ if 换月指数 >= 1.2 or 距离到期 < 15天:
 ### Step 1: 初始化Next.js项目
 
 ```bash
-cd /Users/allen/Documents/GitHub/quantFu
+cd ~/Documents/GitHub/quantFu
 
 # 创建Next.js项目
 npx create-next-app@latest frontend \

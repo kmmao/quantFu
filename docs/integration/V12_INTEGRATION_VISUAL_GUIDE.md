@@ -369,7 +369,7 @@ export QUANTFU_ENABLE=true
 ### 2. 启动 QuantFu 后端
 
 ```bash
-cd /Users/allen/Documents/GitHub/quantFu
+cd ~/Documents/GitHub/quantFu
 ./scripts/start.sh
 ```
 

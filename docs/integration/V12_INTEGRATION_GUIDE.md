@@ -56,7 +56,7 @@ v12-fi.py
 ### Step 1: 复制 v12-fi.py 模板
 
 ```bash
-cd /Users/allen/Documents/GitHub/quantFu/archived
+cd ~/Documents/GitHub/quantFu/archived
 
 # v12-fi.py 已经创建好,包含完整的推送模块
 ```
@@ -200,7 +200,7 @@ def initialize(context):
 ### 1. 启动 QuantFu 后端
 
 ```bash
-cd /Users/allen/Documents/GitHub/quantFu
+cd ~/Documents/GitHub/quantFu
 ./scripts/start.sh
 ```
 
@@ -387,7 +387,7 @@ if __name__ == "__main__":
 
 **解决**:
 ```bash
-cd /Users/allen/Documents/GitHub/quantFu
+cd ~/Documents/GitHub/quantFu
 ./scripts/start.sh
 
 # 验证

@@ -35,7 +35,7 @@ v12-fi.py = v12.py (原策略) + 数据推送到 QuantFu 平台
 ### Step 1: 启动 QuantFu 后端 (30秒)
 
 ```bash
-cd /Users/allen/Documents/GitHub/quantFu
+cd ~/Documents/GitHub/quantFu
 ./scripts/start.sh
 ```
 
@@ -139,7 +139,7 @@ curl http://localhost:8888/health
 如果连接失败,运行:
 
 ```bash
-cd /Users/allen/Documents/GitHub/quantFu
+cd ~/Documents/GitHub/quantFu
 ./scripts/start.sh
 ```
 
