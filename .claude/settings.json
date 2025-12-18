@@ -6,16 +6,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "✅ 会话启动 - QuantFu 项目规范:\n1. 【记忆加载】使用 mcp__memory__read_graph 读取项目记忆图谱\n2. 【规则加载】读取 .claude/core/project-specific-rules.md 了解项目规则\n3. 【状态同步】快速扫描记忆中的关键实体,了解:\n   - 当前开发阶段 (Phase)\n   - 未完成的任务\n   - 最近的技术决策\n   - 遇到的问题和解决方案\n4. 准备好协助开发"
-          }
-        ]
-      },
-      {
-        "matcher": "resume",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "🔄 会话恢复 - 快速同步上下文:\n1. 使用 mcp__memory__read_graph 读取记忆\n2. 检查是否有新的开发进度需要了解\n3. 确认上次会话的遗留任务"
+            "prompt": "✅ QuantFu 会话启动:\n1. 使用 mcp__memory__read_graph 读取项目记忆图谱\n2. 分析记忆中的关键实体,了解项目现状\n3. 读取 .claude/core/project-specific-rules.md 了解项目规则\n4. 准备好协助开发"
           }
         ]
       }
@@ -25,7 +16,18 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "⚠️ 会话结束 - 保存记忆体:\n\n【必须保存的信息】:\n1. 本次会话的关键决策和技术选型\n2. 新增或更新的项目规则\n3. 遇到的问题及解决方案\n4. 未完成的任务和下一步计划\n5. 重要的代码架构变更\n\n【操作步骤】:\n1. 使用 mcp__memory__create_entities 创建新实体 (如: 新功能模块、技术决策)\n2. 使用 mcp__memory__add_observations 补充已有实体的信息\n3. 使用 mcp__memory__create_relations 建立实体关系\n4. 如有新规则,更新 .claude/core/project-specific-rules.md\n5. 确认所有待办事项已记录\n\n💡 提示: 记忆体会在不同设备和会话间共享!"
+            "prompt": "⚠️ 会话结束 - 自动保存记忆:\n\n**请执行以下操作**:\n1. 回顾本次会话的所有重要内容\n2. 自动判断哪些需要记录到 Memory:\n   - 关键技术决策\n   - 遇到的问题和解决方案\n   - 完成的功能里程碑\n   - 新制定的项目规则\n3. 使用 mcp__memory 工具批量记录\n4. 整合到已有实体或创建新实体\n5. 如有新规则,同步更新到 .claude/core/project-specific-rules.md\n6. 完成后确认: \"✅ 记忆已保存\"\n\n**记录要求**:\n- 只记录真正重要的内容 (不是所有改动)\n- 智能整合,避免重复\n- 建立实体间的关联关系"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/auto-memory-tracker"
           }
         ]
       }
@@ -36,36 +38,6 @@
           {
             "type": "command",
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/task-complete-notify.sh"
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/user-prompt-submit"
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/post-tool-use"
-          }
-        ]
-      },
-      {
-        "matcher": "Task",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/milestone-tracker"
           }
         ]
       }
