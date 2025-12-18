@@ -9,6 +9,16 @@
       "env": {
         "MEMORY_FILE_PATH": "/Users/sangreal/Documents/GitHub/quantFu/.claude/memory/memory.jsonl"
       }
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@executeautomation/playwright-mcp-server"
+      ],
+      "env": {
+        "PLAYWRIGHT_PROJECT_DIR": "/Users/sangreal/Documents/GitHub/quantFu/frontend"
+      }
     }
   }
 }

@@ -18,6 +18,8 @@
 ### 3. 代码完成后
 - 运行 linter (零错误,警告需评估)
 - 运行测试 (新代码测试覆盖率 ≥ 80%)
+  - **前端**: `cd frontend && npm test`
+  - **后端**: `cd backend && pytest`
 - 类型检查零错误 (如适用)
 
 ### 4. 文档要求
@@ -108,7 +110,7 @@
 - **[架构设计](core/architecture-principles.md)** - 分层架构、SOLID、设计模式
 - **[代码质量](core/code-quality.md)** - 命名规范、函数设计、重构策略
 - **[安全原则](core/security-principles.md)** - OWASP Top 10、认证授权、数据保护
-- **[测试策略](core/testing-strategy.md)** - 测试金字塔、TDD、覆盖率要求
+- **[测试策略](core/testing-strategy.md)** ⭐ - Playwright MCP 自动化测试、测试金字塔、覆盖率要求
 - **[Git 工作流](core/git-workflow.md)** - 分支策略、Conventional Commits
 - **[文档标准](core/documentation-standards.md)** - 模块文档、API 文档规范
 - **[项目特定规则](core/project-specific-rules.md)** ⭐ - 动态规则系统
@@ -123,9 +125,14 @@
 - [ ] 类型检查零错误 (如适用)
 - [ ] 新代码测试覆盖率 ≥ 80%
 - [ ] 所有测试通过
+  - 前端 E2E 测试: `cd frontend && npm test`
+  - 后端单元测试: `cd backend && pytest`
 - [ ] 文档已更新 (如需要)
+
+**测试要求详见**: [测试策略](core/testing-strategy.md)
 
 ---
 
-**最后更新**: 2025-12-18
+**最后更新**: 2025-12-19
 **配置状态**: ✅ 已启用
+**测试配置**: ✅ Playwright MCP 自动化测试已配置
