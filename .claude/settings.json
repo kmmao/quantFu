@@ -1,0 +1,56 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "✅ 会话启动 - QuantFu 项目规范:\n1. 使用 mcp__memory__read_graph 读取项目记忆\n2. 读取 .claude/core/project-specific-rules.md 了解项目规则\n3. 准备好协助开发"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "⚠️ 会话结束 - QuantFu 项目保存:\n1. 回顾本次会话的关键决策和规则\n2. 使用 mcp__memory__create_entities 或 mcp__memory__add_observations 保存\n3. 如有新规则,更新到 .claude/core/project-specific-rules.md\n4. 确认所有待办事项已处理"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/task-complete-notify.sh"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/user-prompt-submit"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/post-tool-use"
+          }
+        ]
+      }
+    ]
+  }
+}

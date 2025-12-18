@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# ====================================================================
+# Claude Hook: user-prompt-submit
+# 触发时机: 用户提交每个 prompt 之前
+# 作用: 在 AI 看到用户消息前,自动注入规范提醒
+# ====================================================================
+
+# 读取用户的原始输入
+USER_INPUT=$(cat)
+
+# 检查是否是开发相关任务
+if echo "$USER_INPUT" | grep -qiE "(开发|实现|修改|添加|创建|集成|功能|bug|问题|develop|implement|add|create|fix)"; then
+    # 注入规范提醒
+    cat <<EOF
+⚠️ [自动提醒] 在开始此开发任务前,请先:
+1. 读取 .claude/core/project-specific-rules.md
+2. 确认是否需要创建/更新 guide.md
+3. 使用 AI 代码标记 (--- ai start/end ---)
+
+用户原始请求:
+---
+$USER_INPUT
+EOF
+else
+    # 非开发任务,直接透传
+    echo "$USER_INPUT"
+fi
