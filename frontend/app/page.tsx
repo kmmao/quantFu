@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase, type PositionSummary } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   Table,
   TableBody,
@@ -14,30 +15,37 @@ import {
 } from '@/components/ui/table'
 import { formatDistanceToNow } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
-import { TrendingUp, TrendingDown, RefreshCw } from 'lucide-react'
+import { TrendingUp, TrendingDown, RefreshCw, AlertCircle, Database } from 'lucide-react'
+import Link from 'next/link'
 
 export default function Home() {
   const [positions, setPositions] = useState<PositionSummary[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
 
   // 加载持仓数据
   const fetchPositions = async () => {
     try {
-      const { data, error } = await supabase
+      setLoading(true)
+      setError(null)
+
+      const { data, error: queryError } = await supabase
         .from('v_positions_summary')
         .select('*')
         .order('updated_at', { ascending: false })
 
-      if (error) {
-        console.error('获取持仓数据失败:', error)
+      if (queryError) {
+        console.error('获取持仓数据失败:', queryError)
+        setError(queryError.message || '查询失败')
         return
       }
 
       setPositions(data || [])
       setLastUpdate(new Date())
-    } catch (err) {
+    } catch (err: any) {
       console.error('获取持仓数据异常:', err)
+      setError(err?.message || '未知错误')
     } finally {
       setLoading(false)
     }
@@ -91,6 +99,22 @@ export default function Home() {
 
   return (
     <main className="container mx-auto p-4 md:p-8 max-w-7xl">
+      {/* 错误提示 */}
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex items-center gap-2 text-red-800">
+            <AlertCircle className="w-5 h-5" />
+            <div>
+              <p className="font-semibold">数据加载失败</p>
+              <p className="text-sm mt-1">{error}</p>
+              <p className="text-xs mt-2 text-red-600">
+                提示: 请确保 Supabase 服务正在运行 (docker-compose up -d)
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 页面标题 */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -101,13 +125,13 @@ export default function Home() {
             </p>
           )}
         </div>
-        <button
+        <Button
           onClick={fetchPositions}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+          disabled={loading}
         >
-          <RefreshCw className="w-4 h-4" />
+          <RefreshCw className={`w-4 h-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
           刷新
-        </button>
+        </Button>
       </div>
 
       {/* 统计卡片 */}
@@ -161,8 +185,41 @@ export default function Home() {
       {/* 持仓列表 */}
       {positions.length === 0 ? (
         <Card>
-          <CardContent className="py-12 text-center text-gray-500">
-            暂无持仓数据
+          <CardContent className="py-12">
+            <div className="text-center">
+              <Database className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                暂无持仓数据
+              </h3>
+              <p className="text-sm text-gray-500 mb-6 max-w-md mx-auto">
+                持仓数据来自 positions 表和相关视图。<br/>
+                可以通过以下方式查看或添加数据:
+              </p>
+              <div className="flex gap-3 justify-center">
+                <Link href="/test-supabase">
+                  <Button variant="outline">
+                    <Database className="w-4 h-4 mr-1" />
+                    测试 Supabase 连接
+                  </Button>
+                </Link>
+                <Button
+                  variant="default"
+                  onClick={() => window.open('http://localhost:3001', '_blank')}
+                >
+                  打开 Supabase Studio
+                </Button>
+              </div>
+              <div className="mt-4 p-4 bg-blue-50 rounded-lg max-w-2xl mx-auto text-left">
+                <p className="text-sm font-semibold text-blue-900 mb-2">
+                  💡 快速开始:
+                </p>
+                <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+                  <li>访问 <Link href="/test-supabase" className="underline">Supabase 测试页面</Link> 创建测试账户</li>
+                  <li>在 Supabase Studio 中添加持仓数据</li>
+                  <li>刷新此页面查看持仓监控</li>
+                </ol>
+              </div>
+            </div>
           </CardContent>
         </Card>
       ) : (

@@ -20,13 +20,22 @@ services:
             - PATCH
             - DELETE
             - OPTIONS
+            - HEAD
           headers:
             - Accept
+            - Accept-Language
             - Authorization
             - Content-Type
             - apikey
+            - x-client-info
+            - prefer
+          exposed_headers:
+            - Content-Range
+            - Content-Location
+            - x-content-range
           credentials: true
           max_age: 3600
+          preflight_continue: false
 
   - name: realtime-v1
     url: http://realtime:4000/socket

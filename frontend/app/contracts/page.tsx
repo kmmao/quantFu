@@ -20,9 +20,8 @@ import {
   Calculator,
 } from 'lucide-react'
 import MarginCalculator from '@/components/MarginCalculator'
+import { supabase } from '@/lib/supabase'
 import type { Contract, MainContractSwitch } from '@/lib/supabase'
-
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8888'
 
 export default function ContractsPage() {
   const [activeTab, setActiveTab] = useState<'list' | 'main' | 'expiring' | 'switches'>(
@@ -32,6 +31,7 @@ export default function ContractsPage() {
   const [switches, setSwitches] = useState<MainContractSwitch[]>([])
   const [loading, setLoading] = useState(true)
   const [calculatorOpen, setCalculatorOpen] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   // 统计数据
   const stats = {
@@ -45,25 +45,89 @@ export default function ContractsPage() {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true)
+      setError(null)
 
       if (activeTab === 'switches') {
-        const response = await fetch(`${BACKEND_URL}/api/contracts/main-switches`)
-        const data = await response.json()
-        setSwitches(data.data?.switches || [])
+        // 获取主力合约切换历史
+        // 注意: 这个表可能还不存在,需要后端服务创建
+        try {
+          const { data, error } = await supabase
+            .from('main_contract_switches')
+            .select('*')
+            .order('switch_date', { ascending: false })
+            .limit(50)
+
+          if (error) {
+            // 如果表不存在,设置为空数组
+            if (error.code === 'PGRST204' || error.message.includes('does not exist')) {
+              setSwitches([])
+              setError('主力合约切换历史表尚未创建')
+            } else {
+              throw error
+            }
+          } else {
+            setSwitches(data || [])
+          }
+        } catch (err) {
+          setSwitches([])
+        }
       } else {
-        let endpoint = '/api/contracts/list'
+        let query = supabase
+          .from('contracts')
+          .select('*')
+
+        // 根据不同标签页添加过滤条件
         if (activeTab === 'main') {
-          endpoint = '/api/contracts/main'
+          // 数据库字段是 is_main 不是 is_main_contract
+          query = query.eq('is_main', true)
         } else if (activeTab === 'expiring') {
-          endpoint = '/api/contracts/expiring?days=30'
+          // 计算 30 天后的日期
+          // 数据库字段是 expiry_date 不是 expire_date
+          const thirtyDaysLater = new Date()
+          thirtyDaysLater.setDate(thirtyDaysLater.getDate() + 30)
+          query = query.lte('expiry_date', thirtyDaysLater.toISOString())
         }
 
-        const response = await fetch(`${BACKEND_URL}${endpoint}`)
-        const data = await response.json()
-        setContracts(data.data?.contracts || [])
+        // 排序
+        query = query.order('exchange', { ascending: true })
+          .order('variety_code', { ascending: true })
+
+        const { data, error } = await query
+
+        if (error) throw error
+
+        // 计算到期天数并转换字段名以匹配组件
+        const contractsWithDays = (data || []).map((contract: any) => {
+          const result: any = {
+            ...contract,
+            // 字段名映射: 数据库 -> 组件
+            symbol: contract.polar_symbol,
+            is_main_contract: contract.is_main,
+            expire_date: contract.expiry_date,
+            // 设置缺失的字段默认值
+            last_price: null,
+            settlement_price: null,
+            open_interest: 0,
+            volume: 0,
+            trading_status: 'active'
+          }
+
+          if (contract.expiry_date) {
+            const expireDate = new Date(contract.expiry_date)
+            const today = new Date()
+            const daysToExpiry = Math.ceil(
+              (expireDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+            )
+            result.days_to_expiry = daysToExpiry
+          }
+          return result
+        })
+
+        setContracts(contractsWithDays)
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('获取数据失败:', error)
+      setError(error.message || '获取数据失败')
     } finally {
       setLoading(false)
     }
@@ -73,8 +137,74 @@ export default function ContractsPage() {
     fetchData()
   }, [fetchData])
 
-  const handleSyncContract = async (symbol: string) => {
+  // 创建测试数据
+  const createTestData = async () => {
     try {
+      const testContracts = [
+        {
+          variety_code: 'RB',
+          variety_name: '螺纹钢',
+          exchange: 'SHFE',
+          polar_symbol: 'SHFE.rb2505',
+          tqsdk_symbol: 'SHFE.rb2505',
+          is_main: true,
+          contract_month: '2505',
+          expiry_date: '2025-05-15',
+          multiplier: 10,
+          price_tick: 1.0,
+          margin_ratio: 0.08,
+        },
+        {
+          variety_code: 'HC',
+          variety_name: '热轧卷板',
+          exchange: 'SHFE',
+          polar_symbol: 'SHFE.hc2505',
+          tqsdk_symbol: 'SHFE.hc2505',
+          is_main: true,
+          contract_month: '2505',
+          expiry_date: '2025-05-15',
+          multiplier: 10,
+          price_tick: 1.0,
+          margin_ratio: 0.08,
+        },
+        {
+          variety_code: 'I',
+          variety_name: '铁矿石',
+          exchange: 'DCE',
+          polar_symbol: 'DCE.i2505',
+          tqsdk_symbol: 'DCE.i2505',
+          is_main: true,
+          contract_month: '2505',
+          expiry_date: '2025-05-15',
+          multiplier: 100,
+          price_tick: 0.5,
+          margin_ratio: 0.09,
+        },
+      ]
+
+      const { error } = await supabase
+        .from('contracts')
+        .insert(testContracts)
+
+      if (error) throw error
+
+      alert('测试数据创建成功!')
+      fetchData()
+    } catch (error: any) {
+      console.error('创建测试数据失败:', error)
+      alert(`创建失败: ${error.message}`)
+    }
+  }
+
+  const handleSyncContract = async (symbol: string) => {
+    // 注意: 合约同步功能需要后端服务支持
+    // 如果需要这个功能,请启动后端 FastAPI 服务
+    alert('合约同步功能需要后端服务支持\n请先启动后端 FastAPI 服务 (localhost:8888)')
+
+    // TODO: 如果后端服务已启动,取消注释下面的代码
+    /*
+    try {
+      const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8888'
       const response = await fetch(`${BACKEND_URL}/api/contracts/sync/${symbol}`, {
         method: 'POST',
       })
@@ -90,6 +220,7 @@ export default function ContractsPage() {
       console.error('同步合约失败:', error)
       alert('同步失败,请稍后重试')
     }
+    */
   }
 
   const getExchangeBadge = (exchange: string) => {
@@ -130,12 +261,32 @@ export default function ContractsPage() {
 
   return (
     <main className="container mx-auto p-4 md:p-8 max-w-7xl">
+      {/* 错误提示 */}
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex items-center gap-2 text-red-800">
+            <AlertCircle className="w-5 h-5" />
+            <div>
+              <p className="font-semibold">数据加载失败</p>
+              <p className="text-sm mt-1">{error}</p>
+              <p className="text-xs mt-2 text-red-600">
+                提示: 请确保 Supabase 服务正在运行 (docker-compose up -d)
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
           <TrendingUp className="w-8 h-8 text-blue-600" />
           <h1 className="text-3xl font-bold text-gray-900">合约管理</h1>
         </div>
         <div className="flex gap-2">
+          {contracts.length === 0 && !loading && (
+            <Button variant="outline" onClick={createTestData}>
+              创建测试数据
+            </Button>
+          )}
           <Button variant="outline" onClick={() => setCalculatorOpen(true)}>
             <Calculator className="w-4 h-4 mr-1" />
             保证金计算
