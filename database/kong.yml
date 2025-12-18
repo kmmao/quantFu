@@ -45,6 +45,11 @@ services:
         paths:
           - /realtime/v1/
     plugins:
+      - name: request-transformer
+        config:
+          replace:
+            headers:
+              - Host:realtime-dev.supabase.co
       - name: cors
         config:
           origins:

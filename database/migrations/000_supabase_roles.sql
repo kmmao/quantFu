@@ -39,31 +39,42 @@ BEGIN
 END
 $$;
 
--- 5. 授予 authenticator 能够切换到其他角色的权限
+-- 5. 创建 supabase_admin 角色（Supabase 服务使用）
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'supabase_admin') THEN
+        CREATE ROLE supabase_admin WITH LOGIN CREATEDB CREATEROLE PASSWORD 'XwEpGOeuF1jqrYxMigdFigxComCXEhGa';
+    END IF;
+END
+$$;
+
+-- 6. 授予 authenticator 能够切换到其他角色的权限
 GRANT anon TO authenticator;
 GRANT authenticated TO authenticator;
 GRANT service_role TO authenticator;
 
--- 6. 为 public schema 授予权限
+-- 7. 为 public schema 授予权限
 GRANT USAGE ON SCHEMA public TO anon;
 GRANT USAGE ON SCHEMA public TO authenticated;
 GRANT USAGE ON SCHEMA public TO service_role;
 
--- 7. 授予表访问权限（默认）
+-- 8. 授予表访问权限（默认）
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO anon;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO authenticated;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO supabase_admin;
 
--- 8. 授予序列访问权限
+-- 9. 授予序列访问权限
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE ON SEQUENCES TO anon;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO authenticated;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO supabase_admin;
 
--- 9. 启用必需的扩展
+-- 10. 启用必需的扩展
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pg_stat_statements";
 
--- 10. 验证角色创建
+-- 11. 验证角色创建
 DO $$
 BEGIN
     RAISE NOTICE '✅ Supabase 角色配置完成:';
@@ -71,5 +82,6 @@ BEGIN
     RAISE NOTICE '   - anon';
     RAISE NOTICE '   - authenticated';
     RAISE NOTICE '   - service_role';
+    RAISE NOTICE '   - supabase_admin (LOGIN)';
 END
 $$;
