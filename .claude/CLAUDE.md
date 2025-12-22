@@ -28,8 +28,12 @@
 - **新策略模块**: 按照策略目录结构规范创建文档
 
 ### 5. 任务完成后
-- 发送通知: `ntfy send ntfy.zmddg.com/claude "任务完成:{任务描述} - {结果摘要}"`
-- 清理临时文件
+- **Git 提交**: 自动进行本地提交 (使用 `make commit` 或手动提交)
+  - 遵循 Conventional Commits 规范
+  - 提交信息格式: `<类型>(<范围>): <描述>`
+  - 自动添加 AI 标识和 Co-Authored-By
+- **发送通知**: `ntfy send ntfy.zmddg.com/claude "任务完成:{任务描述} - {结果摘要}"`
+- **清理临时文件**
 
 ---
 

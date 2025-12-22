@@ -6,6 +6,16 @@ help: ## 显示帮助信息
 	@echo "期货量化管理平台 - 可用命令:"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}'
 
+check: ## 检查开发环境依赖
+	@./check-env.sh
+
+commit: ## 交互式 Git 提交 (遵循 Conventional Commits)
+	@./scripts/git-commit.sh
+
+quick-commit: ## 快速提交当前所有更改
+	@echo "🚀 快速提交..."
+	@./scripts/quick-commit.sh
+
 setup: ## 初始化项目(首次运行)
 	@echo "🚀 初始化项目..."
 	@cp .env.example .env 2>/dev/null || echo ".env已存在"
@@ -72,18 +82,32 @@ db-restore: ## 从备份恢复(需指定文件: make db-restore FILE=backups/xxx
 	@echo "✅ 恢复完成"
 
 dev-backend: ## 启动后端开发服务器
-	cd backend && source .venv/bin/activate && uvicorn main:app --reload --port 8888
+	@if command -v uv &> /dev/null; then \
+		cd backend && uv run uvicorn main:app --reload --port 8888; \
+	else \
+		cd backend && source .venv/bin/activate && uvicorn main:app --reload --port 8888; \
+	fi
 
 dev-frontend: ## 启动前端开发服务器
 	cd frontend && npm run dev
 
 test: ## 运行测试
 	@echo "🧪 运行测试..."
-	cd backend && pytest
+	@if command -v uv &> /dev/null; then \
+		cd backend && uv run pytest; \
+	else \
+		cd backend && source .venv/bin/activate && pytest; \
+	fi
 
 install: ## 安装依赖
 	@echo "📦 安装后端依赖..."
-	cd backend && pip install -r requirements.txt
+	@if command -v uv &> /dev/null; then \
+		echo "  使用 uv 安装后端依赖..."; \
+		cd backend && uv venv && uv sync; \
+	else \
+		echo "  使用 pip 安装后端依赖..."; \
+		cd backend && python3 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt; \
+	fi
 	@echo "📦 安装前端依赖..."
 	cd frontend && npm install
 	@echo "✅ 依赖安装完成"
@@ -123,7 +147,11 @@ dev-full: dev-clean-ports ## 启动完整开发环境(数据库+后端+前端)
 	@echo "⏳ 等待数据库就绪..."
 	@sleep 5
 	@echo "🔧 后台启动后端..."
-	@cd backend && source .venv/bin/activate && uvicorn main:app --reload --port 8888 > backend.log 2>&1 & echo $$! > /tmp/quantfu-backend.pid
+	@if command -v uv &> /dev/null; then \
+		cd backend && uv run uvicorn main:app --reload --port 8888 > backend.log 2>&1 & echo $$! > /tmp/quantfu-backend.pid; \
+	else \
+		cd backend && source .venv/bin/activate && uvicorn main:app --reload --port 8888 > backend.log 2>&1 & echo $$! > /tmp/quantfu-backend.pid; \
+	fi
 	@sleep 2
 	@echo ""
 	@echo "📋 日志文件位置："
