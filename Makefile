@@ -72,7 +72,7 @@ db-restore: ## 从备份恢复(需指定文件: make db-restore FILE=backups/xxx
 	@echo "✅ 恢复完成"
 
 dev-backend: ## 启动后端开发服务器
-	cd backend && uvicorn main:app --reload --port 8888
+	cd backend && source .venv/bin/activate && uvicorn main:app --reload --port 8888
 
 dev-frontend: ## 启动前端开发服务器
 	cd frontend && npm run dev
@@ -123,7 +123,7 @@ dev-full: dev-clean-ports ## 启动完整开发环境(数据库+后端+前端)
 	@echo "⏳ 等待数据库就绪..."
 	@sleep 5
 	@echo "🔧 后台启动后端..."
-	@cd backend && uvicorn main:app --reload --port 8888 > backend.log 2>&1 & echo $$! > /tmp/quantfu-backend.pid
+	@cd backend && source .venv/bin/activate && uvicorn main:app --reload --port 8888 > backend.log 2>&1 & echo $$! > /tmp/quantfu-backend.pid
 	@sleep 2
 	@echo ""
 	@echo "📋 日志文件位置："

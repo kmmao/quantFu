@@ -36,7 +36,7 @@ export default function KLineChart({ data, markers = [], height = 400 }: KLineCh
     if (!chartContainerRef.current || data.length === 0) return
 
     // 动态导入 lightweight-charts (仅客户端)
-    import('lightweight-charts').then(({ createChart, ColorType }) => {
+    import('lightweight-charts').then((LightweightCharts) => {
       if (!chartContainerRef.current) return
 
       // 清理旧图表
@@ -45,9 +45,9 @@ export default function KLineChart({ data, markers = [], height = 400 }: KLineCh
       }
 
       // 创建图表
-      const chart = createChart(chartContainerRef.current, {
+      const chart = LightweightCharts.createChart(chartContainerRef.current, {
         layout: {
-          background: { type: ColorType.Solid, color: 'white' },
+          background: { type: LightweightCharts.ColorType.Solid, color: 'white' },
           textColor: '#333',
         },
         width: chartContainerRef.current.clientWidth,
@@ -72,7 +72,7 @@ export default function KLineChart({ data, markers = [], height = 400 }: KLineCh
       chartRef.current = chart
 
       // 创建K线系列
-      const candlestickSeries = (chart as any).addCandlestickSeries({
+      const candlestickSeries = chart.addCandlestickSeries({
         upColor: '#26a69a',
         downColor: '#ef5350',
         borderVisible: false,
@@ -83,7 +83,7 @@ export default function KLineChart({ data, markers = [], height = 400 }: KLineCh
       candlestickSeriesRef.current = candlestickSeries
 
       // 创建成交量系列
-      const volumeSeries = (chart as any).addHistogramSeries({
+      const volumeSeries = chart.addHistogramSeries({
         color: '#26a69a',
         priceFormat: {
           type: 'volume',
@@ -93,7 +93,7 @@ export default function KLineChart({ data, markers = [], height = 400 }: KLineCh
 
       volumeSeriesRef.current = volumeSeries
 
-      ;(chart as any).priceScale('volume').applyOptions({
+      chart.priceScale('volume').applyOptions({
         scaleMargins: {
           top: 0.8,
           bottom: 0,
@@ -119,7 +119,7 @@ export default function KLineChart({ data, markers = [], height = 400 }: KLineCh
       // 自适应大小
       const handleResize = () => {
         if (chartContainerRef.current) {
-          ;(chart as any).applyOptions({
+          chart.applyOptions({
             width: chartContainerRef.current.clientWidth,
           })
         }
@@ -130,7 +130,7 @@ export default function KLineChart({ data, markers = [], height = 400 }: KLineCh
       // 清理函数保存到 ref
       chartRef.current._cleanup = () => {
         window.removeEventListener('resize', handleResize)
-        ;(chart as any).remove()
+        chart.remove()
       }
     }).catch(error => {
       console.error('加载图表库失败:', error)

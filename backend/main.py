@@ -39,10 +39,15 @@ async def lifespan(app: FastAPI):
     else:
         print("❌ Database connection failed")
 
+    # 初始化天勤连接（单例模式）
+    from services.tqsdk_manager import tqsdk_manager
+    tqsdk_manager.get_api()  # 提前建立连接
+
     yield
 
     # 关闭时
     print("🛑 Shutting down...")
+    tqsdk_manager.close()  # 关闭天勤连接
 
 
 # 创建FastAPI应用
@@ -611,7 +616,7 @@ async def get_kline(
 
         service = KlineService()
         klines = service.get_klines(symbol, duration, length)
-        service.close()
+        # 使用单例模式,不需要手动关闭连接
 
         return {
             "symbol": symbol,
@@ -644,7 +649,7 @@ async def get_kline_with_positions(
 
         service = KlineService()
         data = service.get_klines_with_positions(symbol, account_id, duration, length)
-        service.close()
+        # 使用单例模式,不需要手动关闭连接
 
         return {
             "symbol": symbol,
@@ -666,7 +671,7 @@ async def get_quote(symbol: str):
 
         service = KlineService()
         quote = service.get_quote(symbol)
-        service.close()
+        # 使用单例模式,不需要手动关闭连接
 
         if quote:
             return quote

@@ -64,9 +64,9 @@ export default function ChartPage() {
   const fetchAvailableSymbols = useCallback(async () => {
     try {
       setLoading(true)
-      // 添加超时控制 - 10秒超时
+      // 添加超时控制 - 30秒超时
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 10000)
+      const timeoutId = setTimeout(() => controller.abort(), 30000)
 
       const { data, error } = await supabase
         .from('v_positions_summary')
@@ -121,7 +121,7 @@ export default function ChartPage() {
 
       // K线数据获取 - 带持仓标记
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10秒超时
+      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30秒超时（天勤服务需要较长时间）
 
       // 如果是手动输入模式或没有 accountId，使用纯K线接口
       const url = inputMode === 'manual' || !accountId
@@ -149,7 +149,7 @@ export default function ChartPage() {
 
       let errorMsg = '获取K线数据失败'
       if (error.name === 'AbortError') {
-        errorMsg = '请求超时：天勤行情服务可能未启动或网络延迟'
+        errorMsg = '请求超时：天勤行情服务响应缓慢(>30秒)，请稍后重试'
       } else if (error.message?.includes('Failed to fetch')) {
         errorMsg = '无法连接到后端服务，请检查后端是否运行 (localhost:8888)'
       } else if (error.message) {
@@ -390,7 +390,13 @@ export default function ChartPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              {klineError ? (
+              {loading ? (
+                <div className="h-[600px] flex flex-col items-center justify-center bg-gray-50">
+                  <RefreshCw className="h-12 w-12 text-blue-500 mb-4 animate-spin" />
+                  <p className="text-muted-foreground mb-2">正在获取K线数据...</p>
+                  <p className="text-sm text-muted-foreground">首次加载可能需要 10-30 秒</p>
+                </div>
+              ) : klineError ? (
                 <div className="h-[600px] flex flex-col items-center justify-center bg-gray-50">
                   <AlertCircle className="h-12 w-12 text-orange-500 mb-4" />
                   <p className="text-muted-foreground mb-2">{klineError}</p>
@@ -400,7 +406,7 @@ export default function ChartPage() {
                     重试
                   </Button>
                 </div>
-              ) : klines.length === 0 && !loading ? (
+              ) : klines.length === 0 ? (
                 <div className="h-[600px] flex flex-col items-center justify-center bg-gray-50">
                   <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
                   <p className="text-muted-foreground">暂无K线数据</p>

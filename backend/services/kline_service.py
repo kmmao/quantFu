@@ -4,11 +4,10 @@ K线数据服务
 """
 from typing import List, Dict, Any, Optional
 from datetime import datetime
-from tqsdk import TqApi, TqAuth
 
-from config import settings
 from utils.logger import get_logger
 from utils.db import get_supabase_client
+from services.tqsdk_manager import tqsdk_manager
 
 logger = get_logger(__name__)
 
@@ -17,21 +16,12 @@ class KlineService:
     """K线数据服务"""
 
     def __init__(self):
-        self.api: Optional[TqApi] = None
         self.db = get_supabase_client()
 
-    def connect(self):
-        """连接TqSDK API"""
-        try:
-            self.api = TqApi(
-                auth=TqAuth(settings.tqsdk_account, settings.tqsdk_password),
-                web_gui=False
-            )
-            logger.info("✅ 天勤K线服务连接成功")
-            return True
-        except Exception as e:
-            logger.error(f"❌ 天勤K线服务连接失败: {e}")
-            return False
+    @property
+    def api(self):
+        """获取天勤API实例（单例）"""
+        return tqsdk_manager.get_api()
 
     def get_klines(
         self,
@@ -52,10 +42,10 @@ class KlineService:
         """
         try:
             if not self.api:
-                if not self.connect():
-                    return []
+                logger.error("天勤服务未连接")
+                return []
 
-            # 获取K线数据
+            # 获取K线数据（使用单例连接）
             klines = self.api.get_kline_serial(symbol, duration, data_length)
 
             # 转换为标准格式
@@ -74,6 +64,15 @@ class KlineService:
                 })
 
             logger.info(f"获取K线成功: {symbol} {duration}秒 {len(result)}条")
+
+            # 打印前5条数据用于调试
+            if result:
+                logger.info(f"前5条K线数据:")
+                for i, kline in enumerate(result[:5], 1):
+                    logger.info(f"  [{i}] {datetime.fromtimestamp(kline['time']).strftime('%Y-%m-%d %H:%M:%S')} - "
+                              f"开:{kline['open']:.2f} 高:{kline['high']:.2f} "
+                              f"低:{kline['low']:.2f} 收:{kline['close']:.2f} 量:{kline['volume']}")
+
             return result
 
         except Exception as e:
@@ -84,8 +83,8 @@ class KlineService:
         """获取实时行情"""
         try:
             if not self.api:
-                if not self.connect():
-                    return None
+                logger.error("天勤服务未连接")
+                return None
 
             quote = self.api.get_quote(symbol)
 
@@ -118,7 +117,7 @@ class KlineService:
 
         Args:
             symbol: 合约代码(TqSDK格式)
-            account_id: 账户ID
+            account_id: 账户ID (UUID格式)
             duration: K线周期
             data_length: K线数量
 
@@ -131,7 +130,15 @@ class KlineService:
             if not klines:
                 return {'klines': [], 'markers': []}
 
-            # 2. 获取持仓信息
+            # 2. 验证 account_id 是否为有效的 UUID 格式
+            import uuid
+            try:
+                uuid.UUID(account_id)
+            except (ValueError, AttributeError):
+                logger.warning(f"无效的 account_id 格式: {account_id}, 跳过持仓查询")
+                return {'klines': klines, 'markers': [], 'position': None}
+
+            # 3. 获取持仓信息
             # 将TqSDK格式转换为Polar格式
             polar_symbol = self._tqsdk_to_polar(symbol)
 
@@ -143,7 +150,7 @@ class KlineService:
                 .execute()
             )
 
-            # 3. 获取成交记录(用于标记开仓/平仓点)
+            # 4. 获取成交记录(用于标记开仓/平仓点)
             trades_result = (
                 self.db.table("trades")
                 .select("*")
@@ -153,7 +160,7 @@ class KlineService:
                 .execute()
             )
 
-            # 4. 生成持仓标记
+            # 5. 生成持仓标记
             markers = []
             if trades_result.data:
                 for trade in trades_result.data:
@@ -173,7 +180,7 @@ class KlineService:
                     }
                     markers.append(marker)
 
-            # 5. 当前持仓信息
+            # 6. 当前持仓信息
             current_position = None
             if position_result.data:
                 pos = position_result.data[0]
@@ -214,10 +221,9 @@ class KlineService:
         return tqsdk_symbol
 
     def close(self):
-        """关闭连接"""
-        if self.api:
-            self.api.close()
-            logger.info("天勤K线服务已关闭")
+        """关闭连接（已弃用，使用单例模式）"""
+        # 不再需要关闭，由单例管理器统一管理
+        pass
 
 
 # 测试运行
