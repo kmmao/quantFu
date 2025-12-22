@@ -1,222 +1,247 @@
-# 🚀 快速启动指南
+# QuantFu 快速启动指南
 
-5分钟让系统跑起来!
-
-## 📋 前置要求
-
-- ✅ Docker Desktop已安装并运行
-- ✅ Python 3.11+ (检查:`python3 --version`)
+> 5分钟上手期货量化管理平台
 
 ---
 
-## Step 1: 启动数据库 (2分钟)
+## 🚀 首次使用(完整初始化)
 
 ```bash
-# 1. 进入项目目录
-cd ~/Documents/GitHub/quantFu
+# 1. 克隆项目
+git clone https://github.com/allen/quantFu.git
+cd quantFu
 
-# 2. 复制环境变量
-cp .env.example .env
+# 2. 一键初始化(会自动安装依赖、启动数据库、创建表结构)
+make init
 
-# 3. 启动Supabase
+# 3. 启动开发环境
+make dev-full
+```
+
+**访问地址:**
+- 前端: http://localhost:3000
+- 后端API: http://localhost:8888/docs
+- 数据库管理: http://localhost:3001
+
+---
+
+## 📋 日常开发命令
+
+### 启动服务
+
+```bash
+# 启动完整开发环境(数据库+后端+前端)
+make dev-full
+
+# 只启动数据库
 make start
 
-# 等待30秒后,访问管理界面
-open http://localhost:3001
+# 只启动前端
+make dev-frontend
+
+# 只启动后端
+make dev-backend
 ```
 
-**验证成功标志:**
-- 浏览器能打开Supabase Studio
-- 左侧能看到数据库表列表
+### 停止服务
+
+```bash
+# 停止开发环境
+make dev-stop
+
+# 停止数据库
+make stop
+
+# Ctrl+C 停止前端/后端
+```
+
+### 查看状态
+
+```bash
+# 查看服务状态
+make status
+
+# 查看实时日志
+make logs
+```
 
 ---
 
-## Step 2: 初始化数据 (1分钟)
+## 🎨 前端开发
 
-### 方式A: 使用Makefile(推荐)
+### 添加 UI 组件
 
 ```bash
-make db-init    # 创建表结构
-make db-seed    # 导入初始数据
+# 添加单个组件
+make ui-add COMP=popover
+
+# 添加多个组件(需要分别执行)
+make ui-add COMP=tooltip
+make ui-add COMP=calendar
 ```
 
-### 方式B: 手动执行SQL
+**可用组件列表:** https://ui.shadcn.com/docs/components
 
-在Supabase Studio界面(http://localhost:3001):
+### 代码检查和测试
 
-1. 点击左侧 **SQL Editor**
-2. 点击 **New query**
-3. 粘贴 `database/migrations/001_init_schema.sql` 的内容
-4. 点击 **Run** 按钮
-5. 重复以上步骤,执行 `database/seed/002_seed_data.sql`
+```bash
+# 代码检查(ESLint)
+make frontend-lint
+
+# 运行测试(Playwright)
+make frontend-test
+
+# 测试 UI 模式(可视化)
+make frontend-test-ui
+
+# 构建生产版本
+make frontend-build
+```
 
 ---
 
-## Step 3: 录入初始持仓 (1分钟)
+## 🗄️ 数据库管理
 
-**重要!** 编辑 `database/seed/002_seed_data.sql` 文件:
+### 基础操作
 
-找到第95行,取消注释并填写实际持仓:
+```bash
+# 进入数据库 Shell
+make db-shell
 
-```sql
--- 示例:主账户的PTA持仓
-INSERT INTO positions (
-    account_id,
-    symbol,
-    long_position,    -- 改为实际多仓手数
-    long_avg_price,   -- 改为实际均价
-    short_position,   -- 改为实际空仓手数
-    short_avg_price,
-    last_price
-) VALUES
-(
-    (SELECT id FROM accounts WHERE polar_account_id = '85178443'),  -- 改为你的账户ID
-    'ZCE|F|TA|2505',  -- 改为实际合约
-    2,      -- 实际多仓
-    5500,   -- 实际均价
-    0,      -- 实际空仓
-    0,
-    5550
-);
+# 查看表结构
+\dt
+
+# 退出
+\q
 ```
 
-然后重新执行:
+### 数据操作
+
 ```bash
+# 重新导入种子数据
 make db-seed
+
+# 完全重置数据库(危险!)
+make db-reset
+
+# 备份数据库
+make db-backup
+
+# 从备份恢复
+make db-restore FILE=backups/backup_20251222_120000.sql
 ```
 
 ---
 
-## Step 4: 启动后端 (1分钟)
+## 🔧 常见问题
+
+### 1. 端口被占用
 
 ```bash
-# 1. 进入后端目录
-cd backend
+# 停止所有服务
+make stop
 
-# 2. 创建虚拟环境
-python3 -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# 3. 安装依赖
-pip install -r requirements.txt
-
-# 4. 复制环境变量
-cp .env.example .env
-
-# 5. 启动服务
-python main.py
-```
-
-**验证成功标志:**
-- 终端显示 `Application startup complete`
-- 访问 http://localhost:8888/docs 能看到API文档
-
----
-
-## Step 5: 测试数据推送 (30秒)
-
-```bash
-# 在新终端中测试
-cd archived
-python3 data_pusher.py
-```
-
-**预期输出:**
-```
-==================================================
-极星数据推送模块 - 连接测试
-==================================================
-
-1. 测试后端连接: http://localhost:8888
-   ✅ 连接成功
-
-2. 测试推送成交数据
-   ✅ 成交数据推送成功
-
-3. 测试推送持仓快照
-   ✅ 持仓快照推送成功
-
-==================================================
-测试完成!
-==================================================
-```
-
----
-
-## ✅ 完成!系统已就绪
-
-现在你可以:
-
-### 1. 查看API文档
-打开 http://localhost:8888/docs
-
-### 2. 查看数据库
-打开 http://localhost:3001 → Tables
-
-### 3. 测试API
-```bash
-# 查询持仓
-curl http://localhost:8888/api/positions/85178443
-
-# 查询合约
-curl http://localhost:8888/api/contracts
-```
-
-### 4. 改造极星策略
-
-参考 `doc/极星策略改造指南.md`,修改v12.py启用数据推送。
-
----
-
-## 🚨 常见问题
-
-### Q1: make命令不存在
-
-**解决方法:**
-```bash
-# 手动执行命令
-docker-compose up -d
-docker exec -i quantfu_postgres psql -U postgres -d postgres < database/migrations/001_init_schema.sql
-```
-
-### Q2: 端口被占用
-
-**症状:** 启动时提示 `port is already allocated`
-
-**解决方法:**
-```bash
-# 查看占用端口的进程
-lsof -i :5432  # PostgreSQL
+# 检查端口占用
+lsof -i :3000  # 前端
 lsof -i :8888  # 后端
-
-# 杀死进程
-kill -9 <PID>
-
-# 重新启动
-make restart
+lsof -i :5432  # 数据库
 ```
 
-### Q3: Python依赖安装失败
+### 2. 数据库连接失败
 
-**解决方法:**
 ```bash
-# 使用国内镜像
-pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+# 检查 Docker 容器状态
+docker ps
+
+# 查看数据库日志
+make logs
+```
+
+### 3. 前端依赖问题
+
+```bash
+# 重新安装依赖
+cd frontend
+rm -rf node_modules package-lock.json
+npm install
+```
+
+### 4. 后端依赖问题
+
+```bash
+# 重新安装依赖
+cd backend
+pip install -r requirements.txt --force-reinstall
 ```
 
 ---
 
-## 📊 下一步
+## 📚 更多命令
 
-- [ ] 改造极星策略 (见 `doc/极星策略改造指南.md`)
-- [ ] 开发前端界面 (阶段2)
-- [ ] 集成天勤行情 (阶段2)
+```bash
+# 查看所有可用命令
+make help
+
+# 清理所有容器和数据(谨慎!)
+make clean
+```
 
 ---
 
-## 🔗 相关文档
+## 🎯 开发工作流推荐
 
-- [完整README](README.md)
-- [极星策略改造指南](doc/极星策略改造指南.md)
-- [数据库设计](database/migrations/001_init_schema.sql)
-- [API文档](http://localhost:8888/docs)
+### 方案 A: 只开发前端
+
+```bash
+# 1. 启动数据库
+make start
+
+# 2. 启动前端
+make dev-frontend
+```
+
+### 方案 B: 全栈开发
+
+```bash
+# 一键启动所有服务
+make dev-full
+```
+
+### 方案 C: 分离调试
+
+**终端 1 - 数据库:**
+```bash
+make start
+```
+
+**终端 2 - 后端:**
+```bash
+make dev-backend
+```
+
+**终端 3 - 前端:**
+```bash
+make dev-frontend
+```
+
+---
+
+## 🔐 环境变量配置
+
+首次使用需要编辑 `.env` 文件:
+
+```env
+# 必须修改
+POSTGRES_PASSWORD=your-strong-password
+JWT_SECRET=your-jwt-secret-32-chars
+
+# 如需使用天勤和极星
+TQSDK_USER=your-tqsdk-username
+TQSDK_PASSWORD=your-tqsdk-password
+POLAR_API_KEY=your-polar-api-key
+```
+
+---
+
+**最后更新:** 2025-12-22
+**版本:** 1.0.0

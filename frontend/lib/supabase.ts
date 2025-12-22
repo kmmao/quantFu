@@ -87,13 +87,13 @@ export interface Trade {
   account_id: string
   symbol: string
   direction: 'buy' | 'sell'
-  offset: 'open' | 'close'
+  offset_flag: 'open' | 'close'  // 修复: 数据库字段名为 offset_flag (避免SQL保留字)
   volume: number
   price: number
-  commission: number
-  source: string
-  polar_order_id: string | null
+  order_id: string | null
   timestamp: string
+  source: string
+  notes: string | null
   created_at: string
 }
 

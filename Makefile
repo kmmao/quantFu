@@ -87,3 +87,64 @@ install: ## 安装依赖
 	@echo "📦 安装前端依赖..."
 	cd frontend && npm install
 	@echo "✅ 依赖安装完成"
+
+# ========== 前端开发命令 ==========
+
+dev-full: ## 启动完整开发环境(数据库+后端+前端)
+	@echo "🚀 启动完整开发环境..."
+	@$(MAKE) start
+	@echo "⏳ 等待数据库就绪..."
+	@sleep 5
+	@echo "🔧 后台启动后端..."
+	@cd backend && uvicorn main:app --reload --port 8888 > /tmp/quantfu-backend.log 2>&1 & echo $$! > /tmp/quantfu-backend.pid
+	@sleep 2
+	@echo "🎨 启动前端(主进程)..."
+	@cd frontend && npm run dev
+
+dev-stop: ## 停止开发环境
+	@echo "🛑 停止后端..."
+	@if [ -f /tmp/quantfu-backend.pid ]; then kill `cat /tmp/quantfu-backend.pid` 2>/dev/null || true; rm /tmp/quantfu-backend.pid; fi
+	@echo "🛑 停止数据库..."
+	@$(MAKE) stop
+
+frontend-build: ## 构建前端生产版本
+	@echo "🏗️  构建前端..."
+	cd frontend && npm run build
+	@echo "✅ 前端构建完成"
+
+frontend-lint: ## 前端代码检查
+	@echo "🔍 检查前端代码..."
+	cd frontend && npm run lint
+	@echo "✅ 代码检查完成"
+
+frontend-test: ## 运行前端测试
+	@echo "🧪 运行前端测试..."
+	cd frontend && npm run test
+	@echo "✅ 测试完成"
+
+frontend-test-ui: ## 运行前端测试(UI模式)
+	cd frontend && npm run test:ui
+
+ui-add: ## 添加shadcn组件(使用: make ui-add COMP=button)
+	@if [ -z "$(COMP)" ]; then \
+		echo "❌ 请指定组件名: make ui-add COMP=button"; \
+		exit 1; \
+	fi
+	@echo "📦 添加 shadcn/ui 组件: $(COMP)..."
+	cd frontend && npx shadcn@latest add $(COMP) --yes
+	@echo "✅ 组件添加完成"
+
+# ========== 完整流程命令 ==========
+
+init: setup install start db-init db-seed ## 完整初始化(首次使用)
+	@echo "🎉 项目初始化完成!"
+	@echo "📝 下一步: make dev-full 启动开发环境"
+
+status: ## 查看服务状态
+	@echo "📊 服务状态:"
+	@docker-compose ps
+	@echo ""
+	@echo "🔗 访问地址:"
+	@echo "  前端: http://localhost:3000"
+	@echo "  后端: http://localhost:8888/docs"
+	@echo "  数据库: http://localhost:3001"

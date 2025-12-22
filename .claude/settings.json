@@ -1,16 +1,5 @@
 {
   "hooks": {
-    "SessionStart": [
-      {
-        "matcher": "startup",
-        "hooks": [
-          {
-            "type": "prompt",
-            "prompt": "✅ QuantFu 会话启动:\n1. 使用 mcp__memory__read_graph 读取项目记忆图谱\n2. 分析记忆中的关键实体,了解项目现状\n3. 读取 .claude/core/project-specific-rules.md 了解项目规则\n4. 准备好协助开发"
-          }
-        ]
-      }
-    ],
     "SessionEnd": [
       {
         "hooks": [

@@ -72,7 +72,7 @@ CREATE TABLE trades (
     account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
     symbol VARCHAR(50) NOT NULL,                       -- 合约代码(极星格式)
     direction VARCHAR(10) NOT NULL,                    -- buy/sell
-    offset VARCHAR(10) NOT NULL,                       -- open/close
+    offset_flag VARCHAR(10) NOT NULL,                  -- open/close (改名避免保留字冲突)
     volume INTEGER NOT NULL,                           -- 成交手数
     price DECIMAL(12,2) NOT NULL,                      -- 成交价格
     order_id VARCHAR(50),                              -- 订单ID
