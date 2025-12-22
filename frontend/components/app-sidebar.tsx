@@ -227,7 +227,6 @@ export function AppSidebar() {
           <DropdownMenuTrigger asChild>
             <button className="flex w-full items-center gap-3 rounded-md p-2 text-sm hover:bg-accent">
               <Avatar className="h-8 w-8">
-                <AvatarImage src="/avatar.png" alt="User" />
                 <AvatarFallback className="bg-primary text-primary-foreground">
                   QF
                 </AvatarFallback>

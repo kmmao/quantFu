@@ -24,7 +24,7 @@ import {
   Zap,
   AlertCircle
 } from 'lucide-react'
-import { StrategySignal } from '@/lib/supabase'
+import { supabase, StrategySignal } from '@/lib/supabase'
 
 export default function SignalsPage() {
   const [signals, setSignals] = useState<StrategySignal[]>([])
@@ -40,10 +40,16 @@ export default function SignalsPage() {
 
   const fetchSignals = async () => {
     try {
-      const response = await fetch('/api/strategy-signals')
-      const data = await response.json()
-      if (data.success) {
-        setSignals(data.data)
+      const { data, error } = await supabase
+        .from('v_pending_signals')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100)
+
+      if (error) {
+        console.error('获取信号失败:', error)
+      } else {
+        setSignals(data || [])
       }
     } catch (error) {
       console.error('获取信号失败:', error)

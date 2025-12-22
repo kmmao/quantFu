@@ -26,7 +26,7 @@ import {
   Activity,
   AlertCircle
 } from 'lucide-react'
-import { RolloverStatistics } from '@/lib/supabase'
+import { supabase, RolloverStatistics } from '@/lib/supabase'
 
 export default function RolloverStatsPage() {
   const [stats, setStats] = useState<RolloverStatistics[]>([])
@@ -40,10 +40,16 @@ export default function RolloverStatsPage() {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('/api/rollover/statistics')
-      const data = await response.json()
-      if (data.success) {
-        setStats(data.data)
+      const { data, error } = await supabase
+        .from('rollover_statistics')
+        .select('*')
+        .order('date', { ascending: false })
+        .limit(100)
+
+      if (error) {
+        console.error('获取换月统计失败:', error)
+      } else {
+        setStats(data || [])
       }
     } catch (error) {
       console.error('获取换月统计失败:', error)

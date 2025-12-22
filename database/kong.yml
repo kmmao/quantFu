@@ -29,6 +29,8 @@ services:
             - apikey
             - x-client-info
             - prefer
+            - accept-profile
+            - content-profile
           exposed_headers:
             - Content-Range
             - Content-Location

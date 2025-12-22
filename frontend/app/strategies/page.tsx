@@ -17,7 +17,7 @@ import {
   Clock,
   Plus
 } from 'lucide-react'
-import { StrategyInstance } from '@/lib/supabase'
+import { supabase, StrategyInstance } from '@/lib/supabase'
 import InstanceParamsDialog from '@/components/InstanceParamsDialog'
 import ParamHistoryDialog from '@/components/ParamHistoryDialog'
 import CreateInstanceDialog from '@/components/CreateInstanceDialog'
@@ -40,10 +40,15 @@ export default function StrategiesPage() {
 
   const fetchInstances = async () => {
     try {
-      const response = await fetch('/api/strategy-instances')
-      const data = await response.json()
-      if (data.success) {
-        setInstances(data.data)
+      const { data, error } = await supabase
+        .from('v_active_strategy_instances')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('获取策略实例失败:', error)
+      } else {
+        setInstances(data || [])
       }
     } catch (error) {
       console.error('获取策略实例失败:', error)

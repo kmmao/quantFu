@@ -19,7 +19,7 @@ import {
   Target,
   AlertCircle
 } from 'lucide-react'
-import { ResourceUsage, StrategyGroup } from '@/lib/supabase'
+import { supabase, ResourceUsage, StrategyGroup } from '@/lib/supabase'
 
 export default function ResourcesPage() {
   const [groups, setGroups] = useState<StrategyGroup[]>([])
@@ -39,12 +39,17 @@ export default function ResourcesPage() {
 
   const fetchGroups = async () => {
     try {
-      const response = await fetch('/api/strategy-groups')
-      const data = await response.json()
-      if (data.success) {
-        setGroups(data.data)
-        if (data.data.length > 0) {
-          setSelectedGroupId(data.data[0].id)
+      const { data, error } = await supabase
+        .from('v_strategy_group_summary')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('获取策略组失败:', error)
+      } else {
+        setGroups(data || [])
+        if (data && data.length > 0) {
+          setSelectedGroupId(data[0].id)
         }
       }
     } catch (error) {

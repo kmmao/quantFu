@@ -23,7 +23,7 @@ import {
   UserPlus,
   AlertCircle
 } from 'lucide-react'
-import { StrategyGroup } from '@/lib/supabase'
+import { supabase, StrategyGroup } from '@/lib/supabase'
 import CreateGroupDialog from '@/components/CreateGroupDialog'
 import GroupMembersDialog from '@/components/GroupMembersDialog'
 import GroupSettingsDialog from '@/components/GroupSettingsDialog'
@@ -45,10 +45,15 @@ export default function StrategyGroupsPage() {
 
   const fetchGroups = async () => {
     try {
-      const response = await fetch('/api/strategy-groups')
-      const data = await response.json()
-      if (data.success) {
-        setGroups(data.data)
+      const { data, error } = await supabase
+        .from('v_strategy_group_summary')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('获取策略组失败:', error)
+      } else {
+        setGroups(data || [])
       }
     } catch (error) {
       console.error('获取策略组失败:', error)

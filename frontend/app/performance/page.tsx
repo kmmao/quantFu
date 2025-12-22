@@ -30,7 +30,7 @@ import {
   AlertCircle,
   BarChart3
 } from 'lucide-react'
-import { StrategyPerformance } from '@/lib/supabase'
+import { supabase, StrategyPerformance } from '@/lib/supabase'
 
 export default function PerformancePage() {
   const [performances, setPerformances] = useState<any[]>([])
@@ -41,10 +41,21 @@ export default function PerformancePage() {
   const fetchPerformances = useCallback(async () => {
     setLoading(true)
     try {
-      const response = await fetch(`/api/strategy-performance/ranking?days=${dateRange}`)
-      const data = await response.json()
-      if (data.success) {
-        setPerformances(data.data)
+      // 计算日期范围
+      const startDate = new Date()
+      startDate.setDate(startDate.getDate() - parseInt(dateRange))
+      const startDateStr = startDate.toISOString().split('T')[0]
+
+      const { data, error } = await supabase
+        .from('v_strategy_performance_ranking')
+        .select('*')
+        .gte('date', startDateStr)
+        .order('date', { ascending: false })
+
+      if (error) {
+        console.error('获取性能数据失败:', error)
+      } else {
+        setPerformances(data || [])
       }
     } catch (error) {
       console.error('获取性能数据失败:', error)

@@ -23,9 +23,11 @@ import {
   Plus,
   Eye
 } from 'lucide-react'
-import { RolloverTask } from '@/lib/supabase'
+import { supabase, RolloverTask } from '@/lib/supabase'
 import RolloverTaskDetailDialog from '@/components/RolloverTaskDetailDialog'
 import CreateRolloverTaskDialog from '@/components/CreateRolloverTaskDialog'
+
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8888'
 
 export default function RolloverTasksPage() {
   const [tasks, setTasks] = useState<RolloverTask[]>([])
@@ -44,10 +46,15 @@ export default function RolloverTasksPage() {
 
   const fetchTasks = async () => {
     try {
-      const response = await fetch('/api/rollover/tasks')
-      const data = await response.json()
-      if (data.success) {
-        setTasks(data.data)
+      const { data, error } = await supabase
+        .from('v_rollover_task_summary')
+        .select('*')
+        .order('trigger_time', { ascending: false })
+
+      if (error) {
+        console.error('获取换月任务失败:', error)
+      } else {
+        setTasks(data || [])
       }
     } catch (error) {
       console.error('获取换月任务失败:', error)
@@ -60,7 +67,7 @@ export default function RolloverTasksPage() {
     if (!confirm('确定要执行该换月任务吗？')) return
 
     try {
-      const response = await fetch(`/api/rollover/tasks/${taskId}/execute`, {
+      const response = await fetch(`${BACKEND_URL}/api/rollover/tasks/${taskId}/execute`, {
         method: 'POST'
       })
       const data = await response.json()
@@ -79,7 +86,7 @@ export default function RolloverTasksPage() {
     if (!confirm('确定要取消该换月任务吗？')) return
 
     try {
-      const response = await fetch(`/api/rollover/tasks/${taskId}/cancel`, {
+      const response = await fetch(`${BACKEND_URL}/api/rollover/tasks/${taskId}/cancel`, {
         method: 'POST'
       })
       const data = await response.json()

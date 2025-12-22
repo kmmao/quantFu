@@ -67,7 +67,7 @@ services:
     container_name: quantfu_rest
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3333:3000"
     environment:
       PGRST_DB_URI: postgres://authenticator:${AUTHENTICATOR_PASSWORD}@postgres:5432/${POSTGRES_DB}
       PGRST_DB_SCHEMAS: public

@@ -37,7 +37,9 @@ import {
   Shield,
   AlertCircle
 } from 'lucide-react'
-import { StrategyConflict, StrategyGroup } from '@/lib/supabase'
+import { supabase, StrategyConflict, StrategyGroup } from '@/lib/supabase'
+
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8888'
 
 export default function ConflictsPage() {
   const [groups, setGroups] = useState<StrategyGroup[]>([])
@@ -55,11 +57,16 @@ export default function ConflictsPage() {
 
   const fetchGroups = async () => {
     try {
-      const response = await fetch('/api/strategy-groups')
-      const data = await response.json()
-      if (data.success) {
-        setGroups(data.data)
-        if (data.data.length > 0) {
+      const { data, error } = await supabase
+        .from('v_strategy_group_summary')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('获取策略组失败:', error)
+      } else {
+        setGroups(data || [])
+        if (data && data.length > 0) {
           setSelectedGroupId('all')
         }
       }
@@ -72,27 +79,29 @@ export default function ConflictsPage() {
 
   const fetchConflicts = useCallback(async () => {
     try {
-      let url = '/api/strategy-conflicts'
-      const params = new URLSearchParams()
+      let query = supabase
+        .from('strategy_conflicts')
+        .select('*')
+        .order('created_at', { ascending: false })
 
+      // 策略组筛选
       if (selectedGroupId !== 'all') {
-        params.append('group_id', selectedGroupId)
+        query = query.eq('group_id', selectedGroupId)
       }
 
+      // 解决状态筛选
       if (filter === 'unresolved') {
-        params.append('resolved', 'false')
+        query = query.eq('resolved', false)
       } else if (filter === 'resolved') {
-        params.append('resolved', 'true')
+        query = query.eq('resolved', true)
       }
 
-      if (params.toString()) {
-        url += '?' + params.toString()
-      }
+      const { data, error } = await query
 
-      const response = await fetch(url)
-      const data = await response.json()
-      if (data.success) {
-        setConflicts(data.data)
+      if (error) {
+        console.error('获取冲突记录失败:', error)
+      } else {
+        setConflicts(data || [])
       }
     } catch (error) {
       console.error('获取冲突记录失败:', error)
@@ -112,7 +121,7 @@ export default function ConflictsPage() {
     }
 
     try {
-      const response = await fetch(`/api/strategy-conflicts/${selectedConflict.id}/resolve`, {
+      const response = await fetch(`${BACKEND_URL}/api/conflicts/${selectedConflict.id}/resolve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ resolution })
@@ -124,8 +133,11 @@ export default function ConflictsPage() {
         setResolveDialogOpen(false)
         setSelectedConflict(null)
         setResolution('')
+      } else {
+        alert('解决失败: ' + (data.message || '未知错误'))
       }
     } catch (error) {
+      console.error('解决冲突失败:', error)
       alert('解决失败')
     }
   }

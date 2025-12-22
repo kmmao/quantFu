@@ -1,0 +1,3 @@
+# Placeholder - need to create actual PNG icons
+# Use an online tool like https://realfavicongenerator.net/ 
+# or create with ImageMagick/GIMP
