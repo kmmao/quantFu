@@ -169,7 +169,7 @@ export default function TestSupabasePage() {
         <CardContent>
           {accounts.length === 0 ? (
             <p className="text-muted-foreground text-sm">
-              暂无数据，点击"创建测试账户"按钮添加测试数据
+              暂无数据，点击&ldquo;创建测试账户&rdquo;按钮添加测试数据
             </p>
           ) : (
             <div className="space-y-2">

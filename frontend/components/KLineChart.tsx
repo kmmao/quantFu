@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { createChart, ColorType, IChartApi, ISeriesApi } from 'lightweight-charts'
+import { createChart, ColorType, IChartApi } from 'lightweight-charts'
 
 interface KLineData {
   time: number
@@ -29,15 +29,15 @@ interface KLineChartProps {
 
 export default function KLineChart({ data, markers = [], height = 400 }: KLineChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null)
-  const chartRef = useRef<IChartApi | null>(null)
-  const candlestickSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null)
-  const volumeSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null)
+  const chartRef = useRef<any>(null)
+  const candlestickSeriesRef = useRef<any>(null)
+  const volumeSeriesRef = useRef<any>(null)
 
   useEffect(() => {
     if (!chartContainerRef.current || data.length === 0) return
 
     // 创建图表
-    const chart = createChart(chartContainerRef.current, {
+    const chart: any = createChart(chartContainerRef.current, {
       layout: {
         background: { type: ColorType.Solid, color: 'white' },
         textColor: '#333',

@@ -68,10 +68,10 @@ export default function SignalsPage() {
 
   const getStatusBadge = (status: string) => {
     const config = {
-      pending: { label: '待处理', variant: 'secondary' as const, icon: Clock },
+      pending: { label: '待处理', variant: 'secondary' as const, icon: Clock, className: '' },
       executed: { label: '已执行', variant: 'default' as const, icon: CheckCircle2, className: 'bg-green-500' },
-      rejected: { label: '已拒绝', variant: 'destructive' as const, icon: XCircle },
-      expired: { label: '已过期', variant: 'outline' as const, icon: Clock }
+      rejected: { label: '已拒绝', variant: 'destructive' as const, icon: XCircle, className: '' },
+      expired: { label: '已过期', variant: 'outline' as const, icon: Clock, className: '' }
     }
     const { label, variant, icon: Icon, className } = config[status as keyof typeof config] || config.pending
     return (

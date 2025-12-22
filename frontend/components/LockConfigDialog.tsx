@@ -35,7 +35,7 @@ export default function LockConfigDialog({
     account_id: '',
     symbol: '',
     direction: 'long' as 'long' | 'short',
-    trigger_type: 'profit' as 'profit' | 'price',
+    trigger_type: 'profit' as 'profit' | 'price' | 'time',
     auto_execute: false,
     profit_lock_enabled: true,
     profit_lock_threshold: 10000,

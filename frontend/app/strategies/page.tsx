@@ -18,7 +18,6 @@ import {
   Plus
 } from 'lucide-react'
 import { StrategyInstance } from '@/lib/supabase'
-import InstanceConfigDialog from '@/components/InstanceConfigDialog'
 import InstanceParamsDialog from '@/components/InstanceParamsDialog'
 import ParamHistoryDialog from '@/components/ParamHistoryDialog'
 import CreateInstanceDialog from '@/components/CreateInstanceDialog'

@@ -93,11 +93,11 @@ export default function RolloverTasksPage() {
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      pending: { label: '待执行', variant: 'secondary' as const, icon: Clock },
-      in_progress: { label: '执行中', variant: 'default' as const, icon: Play },
+      pending: { label: '待执行', variant: 'secondary' as const, icon: Clock, className: '' },
+      in_progress: { label: '执行中', variant: 'default' as const, icon: Play, className: '' },
       completed: { label: '已完成', variant: 'default' as const, icon: CheckCircle2, className: 'bg-green-500' },
-      failed: { label: '失败', variant: 'destructive' as const, icon: XCircle },
-      cancelled: { label: '已取消', variant: 'outline' as const, icon: XCircle }
+      failed: { label: '失败', variant: 'destructive' as const, icon: XCircle, className: '' },
+      cancelled: { label: '已取消', variant: 'outline' as const, icon: XCircle, className: '' }
     }
 
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending

@@ -60,8 +60,8 @@ export default function StrategyGroupsPage() {
   const getConflictModeBadge = (mode: string) => {
     const config = {
       allow: { label: '允许', variant: 'default' as const, className: 'bg-green-500' },
-      reject: { label: '拒绝', variant: 'destructive' as const },
-      merge: { label: '合并', variant: 'secondary' as const }
+      reject: { label: '拒绝', variant: 'destructive' as const, className: '' },
+      merge: { label: '合并', variant: 'secondary' as const, className: '' }
     }
     const { label, variant, className } = config[mode as keyof typeof config] || config.allow
     return <Badge variant={variant} className={className}>{label}</Badge>
@@ -255,7 +255,7 @@ export default function StrategyGroupsPage() {
                       <div className="font-medium">{group.total_capital.toLocaleString()} 元</div>
                     </div>
                   )}
-                  {group.allocated_capital !== null && (
+                  {group.allocated_capital !== null && group.allocated_capital !== undefined && (
                     <div>
                       <div className="text-muted-foreground">已分配</div>
                       <div className="font-medium">{group.allocated_capital.toLocaleString()} 元</div>
