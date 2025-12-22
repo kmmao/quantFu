@@ -230,6 +230,221 @@ docker exec quantfu_postgres psql -U postgres -d postgres -tAc \
 
 ---
 
+## 2025-12-23: PostgREST Schema Cache 未更新导致"表不存在"错误
+
+### 🐛 问题描述
+
+**症状**:
+- 环境检查脚本显示所有9个核心表都存在 ✓
+- 数据库中可以直接查询到所有表
+- 但前端报错: `Database connection failed: Could not find the table 'public.accounts' in the schema cache`
+
+**PostgREST 日志显示**:
+```
+Schema cache loaded 3 Relations, 2 Relationships, 0 Functions...
+```
+
+只加载了3个表，而实际有9个核心表！
+
+### 🔍 根本原因
+
+**PostgREST 的 schema cache 机制**:
+1. PostgREST 启动时会查询数据库，构建 schema cache
+2. 只有在 cache 中的表才会被暴露为 REST API
+3. **Schema cache 不会自动更新**，即使数据库中新增了表
+
+**问题发生的场景**:
+1. 首次运行 `docker-compose up` 时，PostgREST 启动
+2. 此时数据库可能还没有初始化表（或只有部分表）
+3. PostgREST 读取到的表很少，构建了一个不完整的 cache
+4. 后续运行 `make db-init` 创建了所有表
+5. **但 PostgREST 仍然使用旧的 cache**，不知道新表的存在
+
+### ✅ 解决方案
+
+#### 立即修复：重启 PostgREST
+```bash
+docker restart quantfu_rest
+```
+
+**重启后的日志对比**:
+
+**修复前**:
+```
+Schema cache loaded 3 Relations, 2 Relationships, 0 Functions...
+```
+
+**修复后**:
+```
+Schema cache loaded 13 Relations, 10 Relationships, 10 Functions...
+```
+
+从 3 个表增加到 **13 个表**（9个核心表 + 1个视图 + 其他系统表）
+
+#### 验证修复
+```bash
+# 查看 PostgREST API
+curl "http://localhost:3333/" | grep -E "(accounts|contracts|positions)"
+
+# 结果显示所有表都已暴露:
+# /accounts, /contracts, /positions, /trades,
+# /position_snapshots, /lock_configs, /rollover_records,
+# /market_data, /notifications
+```
+
+### 📋 正确的数据库初始化流程
+
+#### 推荐流程（避免此问题）
+
+**方式 1: 一次性启动（推荐）**
+```bash
+# 1. 确保数据库卷不存在（首次安装）
+docker-compose down -v  # 删除卷
+
+# 2. 启动所有服务（migrations 会自动执行）
+make start
+
+# 3. 等待数据库初始化完成（约10秒）
+sleep 10
+
+# 4. PostgREST 会自动加载完整的 schema
+docker logs quantfu_rest --tail 5
+```
+
+**方式 2: 分步启动（当前情况）**
+```bash
+# 1. 先启动数据库
+docker-compose up -d postgres
+
+# 2. 等待数据库健康
+docker-compose ps postgres  # 等待 (healthy)
+
+# 3. 初始化表结构
+make db-init
+
+# 4. 重启 PostgREST（关键！）
+docker restart quantfu_rest
+
+# 5. 启动其他服务
+make start
+```
+
+### 🎯 最佳实践
+
+#### 1. 开发环境初始化
+```bash
+# 完整的环境初始化流程
+make clean          # 清理旧环境
+make start          # 启动所有服务
+sleep 10            # 等待初始化
+make check          # 检查环境
+make dev-full       # 启动开发环境
+```
+
+#### 2. 修改数据库结构后
+```bash
+# 执行新的迁移后，必须重启 PostgREST
+docker exec -i quantfu_postgres psql -U postgres -d postgres < database/migrations/new_migration.sql
+
+# 重启 PostgREST 刷新 schema cache
+docker restart quantfu_rest
+```
+
+#### 3. CI/CD 流程
+```yaml
+# .github/workflows/ci.yml
+- name: Initialize database
+  run: |
+    docker-compose up -d postgres
+    sleep 10  # 等待数据库启动
+    make db-init
+    docker restart quantfu_rest  # 刷新 schema cache
+    sleep 5
+    make check
+```
+
+### 🔍 故障排查
+
+#### 问题 1: 表存在但 PostgREST 404
+**症状**:
+```bash
+curl http://localhost:3333/accounts
+# {"code":"PGRST205","message":"Could not find the table..."}
+```
+
+**原因**: PostgREST schema cache 未更新
+
+**解决**:
+```bash
+docker restart quantfu_rest
+```
+
+#### 问题 2: 重启后仍然只有3个表
+**症状**: 重启后 schema cache 仍显示很少的表
+
+**可能原因**:
+1. 表确实没有创建成功
+2. 权限问题（anon/authenticated 角色没有权限）
+
+**诊断**:
+```bash
+# 1. 检查表是否存在
+docker exec quantfu_postgres psql -U postgres -d postgres -c "\dt"
+
+# 2. 检查权限
+docker exec quantfu_postgres psql -U postgres -d postgres -c "\dp accounts"
+
+# 3. 查看 PostgREST 日志
+docker logs quantfu_rest --tail 50
+```
+
+#### 问题 3: PostgREST 连接失败
+**症状**:
+```
+FATAL: password authentication failed for user "authenticator"
+```
+
+**解决**:
+```bash
+# 检查 .env 中的密码
+cat .env | grep AUTHENTICATOR_PASSWORD
+
+# 确保密码与 000_supabase_roles.sql 中一致
+# 或重新初始化数据库
+make db-reset
+```
+
+### 💡 经验总结
+
+**核心教训**:
+> PostgREST 的 schema cache 是静态的，数据库结构变更后必须手动刷新。
+
+**关键点**:
+1. ✅ 数据库初始化完成后，**必须重启 PostgREST**
+2. ✅ 执行数据库迁移后，**必须重启 PostgREST**
+3. ✅ 环境检查不仅要检查表是否存在，还要检查 PostgREST 是否加载了这些表
+4. ✅ 推荐在 Makefile 中添加 `db-init` 后自动重启 PostgREST
+
+**改进建议**:
+
+更新 `Makefile` 的 `db-init` 命令:
+```makefile
+db-init: ## 初始化数据库表结构
+	@echo "执行数据库迁移..."
+	docker exec -i quantfu_postgres psql -U postgres -d postgres < database/migrations/000_supabase_roles.sql
+	docker exec -i quantfu_postgres psql -U postgres -d postgres < database/migrations/001_init_schema.sql
+	@echo "重启 PostgREST 刷新 schema cache..."
+	docker restart quantfu_rest
+	@echo "✓ 数据库初始化完成"
+```
+
+**预防措施**:
+- 在 `make check` 中添加 PostgREST schema cache 验证
+- 在 `make start` 后自动等待并重启 PostgREST
+- 文档化所有需要重启 PostgREST 的场景
+
+---
+
 ## 总结
 
 **核心教训**:

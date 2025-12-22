@@ -50,8 +50,15 @@ clean: ## 清理所有容器和数据
 
 db-init: ## 初始化数据库表结构
 	@echo "📋 执行数据库迁移..."
-	docker exec -i quantfu_postgres psql -U postgres -d postgres < database/migrations/001_init_schema.sql
-	@echo "✅ 数据库表结构已创建"
+	@echo "  1/2 创建 Supabase 角色和权限..."
+	@docker exec -i quantfu_postgres psql -U postgres -d postgres < database/migrations/000_supabase_roles.sql
+	@echo "  2/2 创建数据库表结构..."
+	@docker exec -i quantfu_postgres psql -U postgres -d postgres < database/migrations/001_init_schema.sql
+	@echo "🔄 重启 PostgREST 刷新 schema cache..."
+	@docker restart quantfu_rest > /dev/null 2>&1
+	@sleep 2
+	@echo "✅ 数据库初始化完成"
+	@echo "📊 PostgREST API: http://localhost:3333"
 
 db-seed: ## 导入初始数据
 	@echo "🌱 导入种子数据..."
