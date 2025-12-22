@@ -78,7 +78,7 @@ export default function ChartPage() {
 
       if (error) {
         console.error('获取持仓合约失败:', error)
-        setKlineError('获取持仓合约失败: ' + error.message)
+        setKlineError('获取持仓合约失败: ' + (error.message || '未知错误'))
         setLoading(false)
         return
       }
@@ -93,11 +93,16 @@ export default function ChartPage() {
 
       setAvailableSymbols(symbols)
 
-      // 如果有持仓，默认选择第一个；否则不设置错误
-      if (symbols.length > 0) {
-        setSymbol(symbols[0].symbol)
-        setAccountId(symbols[0].account_id)
+      // 如果没有持仓，显示友好提示
+      if (symbols.length === 0) {
+        setKlineError('暂无持仓数据，请先添加测试数据到数据库')
+        setLoading(false)
+        return
       }
+
+      // 默认选择第一个
+      setSymbol(symbols[0].symbol)
+      setAccountId(symbols[0].account_id)
 
       setLoading(false)
     } catch (error: any) {

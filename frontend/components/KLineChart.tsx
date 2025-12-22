@@ -71,8 +71,8 @@ export default function KLineChart({ data, markers = [], height = 400 }: KLineCh
 
       chartRef.current = chart
 
-      // 创建K线系列
-      const candlestickSeries = chart.addCandlestickSeries({
+      // 创建K线系列 (v5 API)
+      const candlestickSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
         upColor: '#26a69a',
         downColor: '#ef5350',
         borderVisible: false,
@@ -82,8 +82,8 @@ export default function KLineChart({ data, markers = [], height = 400 }: KLineCh
 
       candlestickSeriesRef.current = candlestickSeries
 
-      // 创建成交量系列
-      const volumeSeries = chart.addHistogramSeries({
+      // 创建成交量系列 (v5 API)
+      const volumeSeries = chart.addSeries(LightweightCharts.HistogramSeries, {
         color: '#26a69a',
         priceFormat: {
           type: 'volume',
@@ -111,9 +111,11 @@ export default function KLineChart({ data, markers = [], height = 400 }: KLineCh
       }))
       volumeSeries.setData(volumeData)
 
-      // 设置标记
+      // 设置标记 (v5 API)
       if (markers.length > 0) {
-        candlestickSeries.setMarkers(markers)
+        const seriesMarkers = LightweightCharts.createSeriesMarkers(candlestickSeries, markers)
+        // 保存到 ref 以便后续更新
+        candlestickSeriesRef.current._markers = seriesMarkers
       }
 
       // 自适应大小
