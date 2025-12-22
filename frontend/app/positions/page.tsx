@@ -1,10 +1,11 @@
 'use client'
 
 import * as React from 'react'
-import { RefreshCw, AlertCircle, Database } from 'lucide-react'
+import { RefreshCw, AlertCircle, Database, Plus, Edit, Trash2 } from 'lucide-react'
 
 import { supabase, type PositionSummary } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
+import { PositionDialog } from '@/components/PositionDialog'
 import {
   Card,
   CardContent,
@@ -27,6 +28,8 @@ export default function PositionsPage() {
   const [positions, setPositions] = React.useState<PositionSummary[]>([])
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
+  const [dialogOpen, setDialogOpen] = React.useState(false)
+  const [editingPosition, setEditingPosition] = React.useState<any>(null)
 
   const fetchPositions = async () => {
     try {
@@ -86,6 +89,78 @@ export default function PositionsPage() {
   ).length
   const lossCount = positions.filter((pos) => (pos.total_profit || 0) < 0).length
 
+  // 处理添加持仓
+  const handleAdd = () => {
+    setEditingPosition(null)
+    setDialogOpen(true)
+  }
+
+  // 处理编辑持仓
+  const handleEdit = async (position: PositionSummary) => {
+    // 从 positions 表获取完整数据,通过 symbol 和 account_name 查询
+    // 先获取 account_id
+    const { data: accountData } = await supabase
+      .from('accounts')
+      .select('id')
+      .eq('account_name', position.account_name)
+      .single()
+
+    if (!accountData) {
+      alert('未找到账户信息')
+      return
+    }
+
+    const { data } = await supabase
+      .from('positions')
+      .select('*')
+      .eq('account_id', accountData.id)
+      .eq('symbol', position.symbol)
+      .single()
+
+    if (data) {
+      setEditingPosition(data)
+      setDialogOpen(true)
+    }
+  }
+
+  // 处理删除持仓
+  const handleDelete = async (position: PositionSummary) => {
+    if (!confirm(`确定要删除 ${position.variety_name} ${position.symbol} 的持仓吗?`)) {
+      return
+    }
+
+    try {
+      // 先获取 account_id
+      const { data: accountData } = await supabase
+        .from('accounts')
+        .select('id')
+        .eq('account_name', position.account_name)
+        .single()
+
+      if (!accountData) {
+        alert('未找到账户信息')
+        return
+      }
+
+      const { error } = await supabase
+        .from('positions')
+        .delete()
+        .eq('account_id', accountData.id)
+        .eq('symbol', position.symbol)
+
+      if (error) throw error
+
+      fetchPositions()
+    } catch (err) {
+      alert(`删除失败: ${err instanceof Error ? err.message : '未知错误'}`)
+    }
+  }
+
+  // 对话框关闭后的回调
+  const handleDialogSuccess = () => {
+    fetchPositions()
+  }
+
   return (
     <div className="flex flex-col gap-4 p-4 lg:gap-6 lg:p-6">
       {/* Page Header */}
@@ -98,12 +173,18 @@ export default function PositionsPage() {
             实时持仓数据监控与盈亏分析
           </p>
         </div>
-        <Button onClick={fetchPositions} disabled={loading}>
-          <RefreshCw
-            className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`}
-          />
-          刷新
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={handleAdd} variant="default">
+            <Plus className="mr-2 h-4 w-4" />
+            添加持仓
+          </Button>
+          <Button onClick={fetchPositions} disabled={loading} variant="outline">
+            <RefreshCw
+              className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`}
+            />
+            刷新
+          </Button>
+        </div>
       </div>
 
       {/* Error Alert */}
@@ -245,6 +326,7 @@ export default function PositionsPage() {
                     <TableHead className="text-right">净持仓</TableHead>
                     <TableHead className="text-right">最新价</TableHead>
                     <TableHead className="text-right">盈亏</TableHead>
+                    <TableHead className="text-right">操作</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -308,6 +390,24 @@ export default function PositionsPage() {
                           {position.total_profit?.toFixed(2) || 0}
                         </div>
                       </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(position)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(position)}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-600" />
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -316,6 +416,14 @@ export default function PositionsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* 添加/编辑对话框 */}
+      <PositionDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        position={editingPosition}
+        onSuccess={handleDialogSuccess}
+      />
     </div>
   )
 }

@@ -96,8 +96,17 @@ dev-full: ## 启动完整开发环境(数据库+后端+前端)
 	@echo "⏳ 等待数据库就绪..."
 	@sleep 5
 	@echo "🔧 后台启动后端..."
-	@cd backend && uvicorn main:app --reload --port 8888 > /tmp/quantfu-backend.log 2>&1 & echo $$! > /tmp/quantfu-backend.pid
+	@cd backend && uvicorn main:app --reload --port 8888 > backend.log 2>&1 & echo $$! > /tmp/quantfu-backend.pid
 	@sleep 2
+	@echo ""
+	@echo "📋 日志文件位置："
+	@echo "   后端: $(PWD)/backend/backend.log"
+	@echo "   前端: $(PWD)/frontend/frontend.log"
+	@echo ""
+	@echo "💡 在新终端查看日志："
+	@echo "   后端: tail -f $(PWD)/backend/backend.log"
+	@echo "   前端: tail -f $(PWD)/frontend/frontend.log"
+	@echo ""
 	@echo "🎨 启动前端(主进程)..."
 	@cd frontend && npm run dev
 
@@ -106,6 +115,18 @@ dev-stop: ## 停止开发环境
 	@if [ -f /tmp/quantfu-backend.pid ]; then kill `cat /tmp/quantfu-backend.pid` 2>/dev/null || true; rm /tmp/quantfu-backend.pid; fi
 	@echo "🛑 停止数据库..."
 	@$(MAKE) stop
+
+dev-logs-backend: ## 查看后端实时日志
+	@echo "🔍 查看后端日志 (Ctrl+C 退出)..."
+	@tail -f backend/backend.log
+
+dev-logs-frontend: ## 查看前端实时日志
+	@echo "🔍 查看前端日志 (Ctrl+C 退出)..."
+	@tail -f frontend/frontend.log
+
+dev-logs-both: ## 同时查看前后端日志
+	@echo "🔍 查看前后端日志 (Ctrl+C 退出)..."
+	@tail -f backend/backend.log frontend/frontend.log
 
 frontend-build: ## 构建前端生产版本
 	@echo "🏗️  构建前端..."

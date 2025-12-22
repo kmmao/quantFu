@@ -132,8 +132,8 @@ async def detailed_health_check():
         health_data["status"] = "unhealthy"
 
     # 2. 天勤连接检查
-    tqsdk_user = os.getenv('TQSDK_USER')
-    tqsdk_password = os.getenv('TQSDK_PASSWORD')
+    tqsdk_user = settings.tqsdk_account  # 使用配置对象而不是直接读取环境变量
+    tqsdk_password = settings.tqsdk_password
     if tqsdk_user and tqsdk_password:
         health_data["components"]["tqsdk"] = {
             "status": "configured",

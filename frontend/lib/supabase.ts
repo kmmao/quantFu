@@ -67,6 +67,7 @@ export interface Position {
 }
 
 export interface PositionSummary {
+  account_id: string  // 账户ID
   symbol: string
   variety_name: string
   account_name: string

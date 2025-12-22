@@ -28,6 +28,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart'
+import { SystemHealth } from '@/components/SystemHealth'
 
 // 模拟盈亏趋势数据
 const profitData = [
@@ -226,57 +227,8 @@ export default function HomePage() {
         </CardContent>
       </Card>
 
-      {/* System Status */}
-      <Card>
-        <CardHeader>
-          <CardTitle>系统状态</CardTitle>
-          <CardDescription>当前系统运行情况</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4">
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
-                <ChartCandlestick className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="font-medium">K线图表服务</p>
-                <p className="text-sm text-muted-foreground">
-                  独立运行,无需数据库
-                </p>
-              </div>
-            </div>
-            <Badge className="bg-green-600">正常</Badge>
-          </div>
-
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
-                <LayoutDashboard className="h-5 w-5 text-amber-600" />
-              </div>
-              <div>
-                <p className="font-medium">Supabase 数据库</p>
-                <p className="text-sm text-muted-foreground">
-                  持仓监控、策略管理等功能依赖
-                </p>
-              </div>
-            </div>
-            <Badge variant="outline" className="border-amber-600 text-amber-600">
-              未连接
-            </Badge>
-          </div>
-
-          <div className="rounded-lg bg-blue-50 p-4">
-            <p className="text-sm text-blue-900">
-              <span className="font-semibold">💡 提示:</span>{' '}
-              即使数据库未连接,您仍可使用{' '}
-              <Link href="/chart" className="font-medium underline">
-                K线图表
-              </Link>{' '}
-              等独立功能。如需使用持仓监控等功能,请确保 Supabase 服务正常运行。
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      {/* System Status - 替换为动态健康检查组件 */}
+      <SystemHealth />
     </div>
   )
 }

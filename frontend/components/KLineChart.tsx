@@ -1,7 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { createChart, ColorType, IChartApi } from 'lightweight-charts'
+import { useEffect, useRef } from 'react'
 
 interface KLineData {
   time: number
@@ -36,93 +35,112 @@ export default function KLineChart({ data, markers = [], height = 400 }: KLineCh
   useEffect(() => {
     if (!chartContainerRef.current || data.length === 0) return
 
-    // 创建图表
-    const chart: any = createChart(chartContainerRef.current, {
-      layout: {
-        background: { type: ColorType.Solid, color: 'white' },
-        textColor: '#333',
-      },
-      width: chartContainerRef.current.clientWidth,
-      height: height,
-      grid: {
-        vertLines: { color: '#f0f0f0' },
-        horzLines: { color: '#f0f0f0' },
-      },
-      crosshair: {
-        mode: 1,
-      },
-      rightPriceScale: {
-        borderColor: '#ddd',
-      },
-      timeScale: {
-        borderColor: '#ddd',
-        timeVisible: true,
-        secondsVisible: false,
-      },
-    })
+    // 动态导入 lightweight-charts (仅客户端)
+    import('lightweight-charts').then(({ createChart, ColorType }) => {
+      if (!chartContainerRef.current) return
 
-    chartRef.current = chart
-
-    // 创建K线系列
-    const candlestickSeries = chart.addCandlestickSeries({
-      upColor: '#26a69a',
-      downColor: '#ef5350',
-      borderVisible: false,
-      wickUpColor: '#26a69a',
-      wickDownColor: '#ef5350',
-    })
-
-    candlestickSeriesRef.current = candlestickSeries
-
-    // 创建成交量系列
-    const volumeSeries = chart.addHistogramSeries({
-      color: '#26a69a',
-      priceFormat: {
-        type: 'volume',
-      },
-      priceScaleId: 'volume',
-    })
-
-    volumeSeriesRef.current = volumeSeries
-
-    chart.priceScale('volume').applyOptions({
-      scaleMargins: {
-        top: 0.8,
-        bottom: 0,
-      },
-    })
-
-    // 设置数据
-    candlestickSeries.setData(data)
-
-    // 设置成交量数据
-    const volumeData = data.map(d => ({
-      time: d.time,
-      value: d.volume,
-      color: d.close >= d.open ? 'rgba(38, 166, 154, 0.5)' : 'rgba(239, 83, 80, 0.5)',
-    }))
-    volumeSeries.setData(volumeData)
-
-    // 设置标记
-    if (markers.length > 0) {
-      candlestickSeries.setMarkers(markers)
-    }
-
-    // 自适应大小
-    const handleResize = () => {
-      if (chartContainerRef.current) {
-        chart.applyOptions({
-          width: chartContainerRef.current.clientWidth,
-        })
+      // 清理旧图表
+      if (chartRef.current) {
+        chartRef.current.remove()
       }
-    }
 
-    window.addEventListener('resize', handleResize)
+      // 创建图表
+      const chart = createChart(chartContainerRef.current, {
+        layout: {
+          background: { type: ColorType.Solid, color: 'white' },
+          textColor: '#333',
+        },
+        width: chartContainerRef.current.clientWidth,
+        height: height,
+        grid: {
+          vertLines: { color: '#f0f0f0' },
+          horzLines: { color: '#f0f0f0' },
+        },
+        crosshair: {
+          mode: 1,
+        },
+        rightPriceScale: {
+          borderColor: '#ddd',
+        },
+        timeScale: {
+          borderColor: '#ddd',
+          timeVisible: true,
+          secondsVisible: false,
+        },
+      })
+
+      chartRef.current = chart
+
+      // 创建K线系列
+      const candlestickSeries = (chart as any).addCandlestickSeries({
+        upColor: '#26a69a',
+        downColor: '#ef5350',
+        borderVisible: false,
+        wickUpColor: '#26a69a',
+        wickDownColor: '#ef5350',
+      })
+
+      candlestickSeriesRef.current = candlestickSeries
+
+      // 创建成交量系列
+      const volumeSeries = (chart as any).addHistogramSeries({
+        color: '#26a69a',
+        priceFormat: {
+          type: 'volume',
+        },
+        priceScaleId: 'volume',
+      })
+
+      volumeSeriesRef.current = volumeSeries
+
+      ;(chart as any).priceScale('volume').applyOptions({
+        scaleMargins: {
+          top: 0.8,
+          bottom: 0,
+        },
+      })
+
+      // 设置数据
+      candlestickSeries.setData(data)
+
+      // 设置成交量数据
+      const volumeData = data.map(d => ({
+        time: d.time,
+        value: d.volume,
+        color: d.close >= d.open ? 'rgba(38, 166, 154, 0.5)' : 'rgba(239, 83, 80, 0.5)',
+      }))
+      volumeSeries.setData(volumeData)
+
+      // 设置标记
+      if (markers.length > 0) {
+        candlestickSeries.setMarkers(markers)
+      }
+
+      // 自适应大小
+      const handleResize = () => {
+        if (chartContainerRef.current) {
+          ;(chart as any).applyOptions({
+            width: chartContainerRef.current.clientWidth,
+          })
+        }
+      }
+
+      window.addEventListener('resize', handleResize)
+
+      // 清理函数保存到 ref
+      chartRef.current._cleanup = () => {
+        window.removeEventListener('resize', handleResize)
+        ;(chart as any).remove()
+      }
+    }).catch(error => {
+      console.error('加载图表库失败:', error)
+    })
 
     // 清理
     return () => {
-      window.removeEventListener('resize', handleResize)
-      chart.remove()
+      if (chartRef.current?._cleanup) {
+        chartRef.current._cleanup()
+      }
     }
   }, [data, markers, height])
 

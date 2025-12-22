@@ -11,22 +11,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import KLineChart from '@/components/KLineChart'
 import { TrendingUp, TrendingDown, RefreshCw, Activity, BarChart3, Grid2X2, AlertCircle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8888'
-
-// 默认演示合约列表 - 不依赖数据库
-const DEFAULT_SYMBOLS = [
-  'CZCE.TA505',
-  'DCE.i2505',
-  'SHFE.rb2505',
-  'DCE.m2505',
-  'CZCE.MA505',
-  'SHFE.au2506',
-]
 
 interface KLineData {
   time: number
@@ -53,40 +44,29 @@ interface SymbolInfo {
   position: number
   avg_price: number
   profit: number
-  isDemo?: boolean // 是否为演示合约
 }
 
 export default function ChartPage() {
   const [klines, setKlines] = useState<KLineData[]>([])
   const [markers, setMarkers] = useState<any[]>([])
   const [position, setPosition] = useState<Position | null>(null)
-  const [loading, setLoading] = useState(false) // 改为 false,不再等待持仓数据
+  const [loading, setLoading] = useState(true) // 等待持仓数据加载
   const [duration, setDuration] = useState(300) // 5分钟K线
-  const [symbol, setSymbol] = useState(DEFAULT_SYMBOLS[0]) // 默认选择第一个合约
-  const [accountId, setAccountId] = useState('demo') // 演示账户
-  const [availableSymbols, setAvailableSymbols] = useState<SymbolInfo[]>(
-    DEFAULT_SYMBOLS.map(s => ({
-      symbol: s,
-      account_id: 'demo',
-      position: 0,
-      avg_price: 0,
-      profit: 0,
-      isDemo: true
-    }))
-  )
+  const [symbol, setSymbol] = useState('')
+  const [accountId, setAccountId] = useState('')
+  const [availableSymbols, setAvailableSymbols] = useState<SymbolInfo[]>([])
   const [viewMode, setViewMode] = useState<'single' | 'grid'>('single')
   const [klineError, setKlineError] = useState<string | null>(null)
-  const [usePositionData, setUsePositionData] = useState(false) // 是否使用持仓数据
+  const [manualSymbol, setManualSymbol] = useState('')  // 手动输入的合约代码
+  const [inputMode, setInputMode] = useState<'select' | 'manual'>('select')  // 输入模式
 
-  // 获取可用合约列表（从持仓中）- 可选功能
+  // 获取可用合约列表（从持仓中）
   const fetchAvailableSymbols = useCallback(async () => {
-    if (!usePositionData) return // 如果不使用持仓数据,直接返回
-
     try {
       setLoading(true)
-      // 添加超时控制 - 3秒超时
+      // 添加超时控制 - 10秒超时
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 3000)
+      const timeoutId = setTimeout(() => controller.abort(), 10000)
 
       const { data, error } = await supabase
         .from('v_positions_summary')
@@ -98,6 +78,7 @@ export default function ChartPage() {
 
       if (error) {
         console.error('获取持仓合约失败:', error)
+        setKlineError('获取持仓合约失败: ' + error.message)
         setLoading(false)
         return
       }
@@ -107,12 +88,13 @@ export default function ChartPage() {
         account_id: pos.account_id,
         position: (pos.long_position || 0) + (pos.short_position || 0),
         avg_price: pos.long_position > 0 ? pos.long_avg_price : pos.short_avg_price,
-        profit: (pos.long_profit || 0) + (pos.short_profit || 0),
-        isDemo: false
+        profit: (pos.long_profit || 0) + (pos.short_profit || 0)
       }))
 
+      setAvailableSymbols(symbols)
+
+      // 如果有持仓，默认选择第一个；否则不设置错误
       if (symbols.length > 0) {
-        setAvailableSymbols(symbols)
         setSymbol(symbols[0].symbol)
         setAccountId(symbols[0].account_id)
       }
@@ -121,27 +103,30 @@ export default function ChartPage() {
     } catch (error: any) {
       console.error('获取持仓合约失败:', error)
       if (error.name === 'AbortError') {
-        console.warn('获取持仓合约超时')
+        setKlineError('获取持仓合约超时,请检查数据库连接')
+      } else {
+        setKlineError('获取持仓合约失败: ' + error.message)
       }
       setLoading(false)
     }
-  }, [usePositionData])
+  }, [])
 
   const fetchKlineData = useCallback(async () => {
-    if (!symbol) return
+    const targetSymbol = inputMode === 'manual' ? manualSymbol.trim() : symbol
+    if (!targetSymbol) return
 
     try {
       setLoading(true)
       setKlineError(null)
 
-      // 简化的K线数据获取 - 只需要合约代码
+      // K线数据获取 - 带持仓标记
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 10000) // 10秒超时
 
-      // 如果使用持仓数据,则调用带持仓标记的接口
-      const url = usePositionData && accountId !== 'demo'
-        ? `${BACKEND_URL}/api/kline/${symbol}/with-positions?account_id=${accountId}&duration=${duration}&length=500`
-        : `${BACKEND_URL}/api/kline/${symbol}?duration=${duration}&length=500`
+      // 如果是手动输入模式或没有 accountId，使用纯K线接口
+      const url = inputMode === 'manual' || !accountId
+        ? `${BACKEND_URL}/api/kline/${targetSymbol}?duration=${duration}&length=500`
+        : `${BACKEND_URL}/api/kline/${targetSymbol}/with-positions?account_id=${accountId}&duration=${duration}&length=500`
 
       const response = await fetch(url, { signal: controller.signal })
 
@@ -153,6 +138,9 @@ export default function ChartPage() {
 
       const data = await response.json()
 
+      // 兼容两种接口格式
+      // 纯K线接口：返回 { symbol, duration, total, klines }
+      // 带持仓接口：返回 { klines, markers, position }
       setKlines(data.klines || [])
       setMarkers(data.markers || [])
       setPosition(data.position || null)
@@ -175,28 +163,21 @@ export default function ChartPage() {
     } finally {
       setLoading(false)
     }
-  }, [symbol, accountId, duration, usePositionData])
+  }, [symbol, accountId, duration, inputMode, manualSymbol])
 
   useEffect(() => {
-    // 页面加载时立即获取第一个合约的K线数据
-    if (symbol) {
-      fetchKlineData()
-    }
+    // 页面加载时获取持仓合约列表
+    fetchAvailableSymbols()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
-    // 仅在开启持仓数据时才获取
-    if (usePositionData) {
-      fetchAvailableSymbols()
-    }
-  }, [usePositionData])
-
-  useEffect(() => {
     // 合约或周期变化时重新获取K线
-    if (symbol) {
+    const targetSymbol = inputMode === 'manual' ? manualSymbol.trim() : symbol
+    if (targetSymbol) {
       fetchKlineData()
     }
-  }, [symbol, duration])
+  }, [symbol, duration, inputMode, manualSymbol, fetchKlineData])
 
   const handleDurationChange = (newDuration: number) => {
     setDuration(newDuration)
@@ -232,6 +213,28 @@ export default function ChartPage() {
     }
   }
 
+  const handleManualSymbolSubmit = () => {
+    if (manualSymbol.trim()) {
+      setInputMode('manual')
+      // 触发数据加载
+      fetchKlineData()
+    }
+  }
+
+  const handleManualSymbolKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleManualSymbolSubmit()
+    }
+  }
+
+  const switchToSelectMode = () => {
+    setInputMode('select')
+    if (availableSymbols.length > 0 && !symbol) {
+      setSymbol(availableSymbols[0].symbol)
+      setAccountId(availableSymbols[0].account_id)
+    }
+  }
+
   return (
     <main className="container mx-auto p-4 md:p-8 max-w-7xl space-y-6">
       {/* 页面标题 */}
@@ -241,18 +244,11 @@ export default function ChartPage() {
           <div>
             <h1 className="text-3xl font-bold text-gray-900">K线图表</h1>
             <p className="text-muted-foreground text-sm mt-1">
-              {usePositionData ? '持仓合约实时行情' : '演示合约实时行情 (TqSDK)'}
+              持仓合约实时行情 (TqSDK)
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant={usePositionData ? 'outline' : 'default'}
-            size="sm"
-            onClick={() => setUsePositionData(!usePositionData)}
-          >
-            {usePositionData ? '切换到演示合约' : '切换到持仓合约'}
-          </Button>
           <Button
             variant={viewMode === 'single' ? 'default' : 'outline'}
             size="sm"
@@ -276,28 +272,65 @@ export default function ChartPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 flex-wrap">
               <div className="space-y-1">
-                <label className="text-sm text-muted-foreground">选择合约</label>
-                <Select value={symbol} onValueChange={handleSymbolChange}>
-                  <SelectTrigger className="w-[250px]">
-                    <SelectValue placeholder="选择合约" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableSymbols.map((s) => (
-                      <SelectItem key={s.symbol} value={s.symbol}>
-                        <div className="flex items-center justify-between gap-4">
-                          <span className="font-medium">{s.symbol}</span>
-                          {!s.isDemo && (
-                            <Badge variant={s.profit >= 0 ? 'default' : 'destructive'} className="text-xs">
-                              {s.profit >= 0 ? '+' : ''}{s.profit.toFixed(0)}
-                            </Badge>
-                          )}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <label className="text-sm text-muted-foreground">合约代码</label>
+                <div className="flex items-center gap-2">
+                  {inputMode === 'select' ? (
+                    <>
+                      <Select value={symbol} onValueChange={handleSymbolChange}>
+                        <SelectTrigger className="w-[200px]">
+                          <SelectValue placeholder="选择持仓合约" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableSymbols.map((s) => (
+                            <SelectItem key={s.symbol} value={s.symbol}>
+                              <div className="flex items-center justify-between gap-4">
+                                <span className="font-medium">{s.symbol}</span>
+                                <Badge variant={s.profit >= 0 ? 'default' : 'destructive'} className="text-xs">
+                                  {s.profit >= 0 ? '+' : ''}{s.profit.toFixed(0)}
+                                </Badge>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setInputMode('manual')}
+                      >
+                        手动输入
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Input
+                        placeholder="如: SHFE.rb2505"
+                        value={manualSymbol}
+                        onChange={(e) => setManualSymbol(e.target.value)}
+                        onKeyDown={handleManualSymbolKeyDown}
+                        className="w-[200px]"
+                      />
+                      <Button
+                        size="sm"
+                        onClick={handleManualSymbolSubmit}
+                        disabled={!manualSymbol.trim()}
+                      >
+                        查询
+                      </Button>
+                      {availableSymbols.length > 0 && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={switchToSelectMode}
+                        >
+                          持仓列表
+                        </Button>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
 
               {klines.length > 0 && (
@@ -353,7 +386,7 @@ export default function ChartPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BarChart3 className="h-5 w-5" />
-                {symbol} K线走势
+                {inputMode === 'manual' ? manualSymbol : symbol} K线走势
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
