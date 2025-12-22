@@ -7894,3 +7894,5 @@ backend/.venv/lib/python3.9/site-packages/yarl-1.22.0.dist-info/top_level.txt
 backend/.venv/lib/python3.9/site-packages/yarl-1.22.0.dist-info/WHEEL
 backend/.venv/lib/python3.9/site-packages/yarl-1.22.0.dist-info/licenses/LICENSE
 backend/.venv/lib/python3.9/site-packages/yarl-1.22.0.dist-info/licenses/NOTICE
+backend/backend.log
+frontend/frontend.log

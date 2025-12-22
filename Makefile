@@ -90,7 +90,34 @@ install: ## 安装依赖
 
 # ========== 前端开发命令 ==========
 
-dev-full: ## 启动完整开发环境(数据库+后端+前端)
+dev-clean-ports: ## 清理占用的端口进程
+	@echo "🧹 检查并清理旧进程..."
+	@# 清理 3000 端口的 Node.js 进程 (前端)
+	@NODE_PIDS=$$(lsof -ti:3000 -sTCP:LISTEN 2>/dev/null | xargs -I {} sh -c 'ps -p {} -o comm= | grep -q node && echo {}' 2>/dev/null); \
+	if [ -n "$$NODE_PIDS" ]; then \
+		echo "  ⚠️  发现 3000 端口的 Node.js 进程，正在清理..."; \
+		echo "$$NODE_PIDS" | xargs kill -9 2>/dev/null || true; \
+		echo "  ✅ Node.js 进程已清理"; \
+	else \
+		echo "  ✓ 3000 端口空闲"; \
+	fi
+	@# 清理 8888 端口的 Python 进程 (后端)
+	@PYTHON_PIDS=$$(lsof -ti:8888 -sTCP:LISTEN 2>/dev/null | xargs -I {} sh -c 'ps -p {} -o comm= | grep -q Python && echo {}' 2>/dev/null); \
+	if [ -n "$$PYTHON_PIDS" ]; then \
+		echo "  ⚠️  发现 8888 端口的 Python 进程，正在清理..."; \
+		echo "$$PYTHON_PIDS" | xargs kill -9 2>/dev/null || true; \
+		echo "  ✅ Python 进程已清理"; \
+	else \
+		echo "  ✓ 8888 端口空闲"; \
+	fi
+	@# 也可以通过进程名直接清理
+	@pkill -9 -f "next-server" 2>/dev/null || true
+	@pkill -9 -f "uvicorn.*main:app" 2>/dev/null || true
+	@# 清理旧的 PID 文件
+	@rm -f /tmp/quantfu-backend.pid 2>/dev/null || true
+	@echo "✅ 端口清理完成"
+
+dev-full: dev-clean-ports ## 启动完整开发环境(数据库+后端+前端)
 	@echo "🚀 启动完整开发环境..."
 	@$(MAKE) start
 	@echo "⏳ 等待数据库就绪..."
@@ -111,10 +138,19 @@ dev-full: ## 启动完整开发环境(数据库+后端+前端)
 	@cd frontend && npm run dev
 
 dev-stop: ## 停止开发环境
-	@echo "🛑 停止后端..."
-	@if [ -f /tmp/quantfu-backend.pid ]; then kill `cat /tmp/quantfu-backend.pid` 2>/dev/null || true; rm /tmp/quantfu-backend.pid; fi
-	@echo "🛑 停止数据库..."
+	@echo "🛑 停止开发环境..."
+	@# 停止后端进程
+	@if [ -f /tmp/quantfu-backend.pid ]; then \
+		echo "  停止后端进程..."; \
+		kill `cat /tmp/quantfu-backend.pid` 2>/dev/null || true; \
+		rm /tmp/quantfu-backend.pid; \
+	fi
+	@# 清理所有相关端口
+	@$(MAKE) dev-clean-ports
+	@# 停止数据库
+	@echo "  停止数据库..."
 	@$(MAKE) stop
+	@echo "✅ 开发环境已停止"
 
 dev-logs-backend: ## 查看后端实时日志
 	@echo "🔍 查看后端日志 (Ctrl+C 退出)..."

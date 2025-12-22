@@ -2,12 +2,13 @@
 > quantfu-frontend@0.1.0 dev
 > next dev
 
+ ⚠ Port 3000 is in use by process 31657, using available port 3002 instead.
    ▲ Next.js 15.5.9
-   - Local:        http://localhost:3000
-   - Network:      http://10.10.10.199:3000
+   - Local:        http://localhost:3002
+   - Network:      http://10.10.10.199:3002
    - Environments: .env.local, .env.development
 
  ✓ Starting...
 > [PWA] PWA support is disabled
 > [PWA] PWA support is disabled
- ✓ Ready in 1960ms
+ ✓ Ready in 2.3s
