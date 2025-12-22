@@ -116,7 +116,7 @@ class KlineService:
         获取K线数据并叠加持仓标记
 
         Args:
-            symbol: 合约代码(TqSDK格式)
+            symbol: 合约代码(可以是 Polar 或 TqSDK 格式)
             account_id: 账户ID (UUID格式)
             duration: K线周期
             data_length: K线数量
@@ -125,10 +125,26 @@ class KlineService:
             包含K线和持仓标记的数据
         """
         try:
-            # 1. 获取K线数据
-            klines = self.get_klines(symbol, duration, data_length)
+            # 0. 判断symbol格式并转换
+            # Polar格式包含 |, TqSDK格式包含 .
+            if '|' in symbol:
+                # Polar格式,需要转换为TqSDK格式
+                polar_symbol = symbol
+                tqsdk_symbol = self._polar_to_tqsdk(symbol)
+                logger.info(f"Symbol格式转换: {polar_symbol} -> {tqsdk_symbol}")
+            else:
+                # 已经是TqSDK格式
+                tqsdk_symbol = symbol
+                polar_symbol = self._tqsdk_to_polar(symbol)
+
+            if not tqsdk_symbol:
+                logger.error(f"无法转换合约代码: {symbol}")
+                return {'klines': [], 'markers': [], 'position': None}
+
+            # 1. 获取K线数据(使用TqSDK格式)
+            klines = self.get_klines(tqsdk_symbol, duration, data_length)
             if not klines:
-                return {'klines': [], 'markers': []}
+                return {'klines': [], 'markers': [], 'position': None}
 
             # 2. 验证 account_id 是否为有效的 UUID 格式
             import uuid
@@ -138,9 +154,7 @@ class KlineService:
                 logger.warning(f"无效的 account_id 格式: {account_id}, 跳过持仓查询")
                 return {'klines': klines, 'markers': [], 'position': None}
 
-            # 3. 获取持仓信息
-            # 将TqSDK格式转换为Polar格式
-            polar_symbol = self._tqsdk_to_polar(symbol)
+            # 3. 获取持仓信息(使用Polar格式)
 
             position_result = (
                 self.db.table("positions")
@@ -204,8 +218,26 @@ class KlineService:
             logger.error(f"获取K线和持仓失败: {e}")
             return {'klines': [], 'markers': [], 'position': None}
 
+    def _polar_to_tqsdk(self, polar_symbol: str) -> str:
+        """Polar格式转TqSDK格式"""
+        # 查询数据库
+        result = (
+            self.db.table("contracts")
+            .select("tqsdk_symbol")
+            .eq("polar_symbol", polar_symbol)
+            .execute()
+        )
+
+        if result.data:
+            logger.info(f"从数据库查询到 tqsdk_symbol: {result.data[0]['tqsdk_symbol']}")
+            return result.data[0]['tqsdk_symbol']
+
+        # 数据库查不到,返回None
+        logger.warning(f"数据库中未找到 polar_symbol: {polar_symbol}")
+        return None
+
     def _tqsdk_to_polar(self, tqsdk_symbol: str) -> str:
-        """TqSDK格式转Polar格式(简化实现)"""
+        """TqSDK格式转Polar格式"""
         # 查询数据库
         result = (
             self.db.table("contracts")

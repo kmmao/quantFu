@@ -2,13 +2,40 @@
 > quantfu-frontend@0.1.0 dev
 > next dev
 
- ⚠ Port 3000 is in use by process 31657, using available port 3002 instead.
    ▲ Next.js 15.5.9
-   - Local:        http://localhost:3002
-   - Network:      http://10.10.10.199:3002
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.31.169:3000
    - Environments: .env.local, .env.development
 
  ✓ Starting...
 > [PWA] PWA support is disabled
 > [PWA] PWA support is disabled
- ✓ Ready in 2.3s
+ ✓ Ready in 1696ms
+ ○ Compiling / ...
+ ✓ Compiled / in 1281ms (2090 modules)
+ GET / 200 in 1654ms
+ ✓ Compiled in 215ms (987 modules)
+ ✓ Compiled /contracts in 392ms (1577 modules)
+ GET /contracts 200 in 597ms
+ ✓ Compiled /lock in 173ms (1593 modules)
+ GET /lock 200 in 205ms
+ ✓ Compiled /positions in 201ms (1661 modules)
+ GET /positions 200 in 246ms
+ ○ Compiling /strategies ...
+ ✓ Compiled /strategies in 627ms (1693 modules)
+ GET /strategies 200 in 715ms
+ GET /strategies 200 in 217ms
+ ✓ Compiled /strategy-groups in 395ms (1714 modules)
+ GET /strategy-groups 200 in 468ms
+ ✓ Compiled /rollover-tasks in 335ms (1732 modules)
+ GET /rollover-tasks 200 in 391ms
+ ✓ Compiled /signals in 171ms (1741 modules)
+ GET /signals 200 in 215ms
+ ✓ Compiled /performance in 319ms (1752 modules)
+ GET /performance 200 in 368ms
+ ✓ Compiled /resources in 189ms (1765 modules)
+ GET /resources 200 in 240ms
+ ✓ Compiled /conflicts in 195ms (1776 modules)
+ GET /conflicts 200 in 239ms
+ ✓ Compiled /chart in 280ms (1801 modules)
+ GET /chart 200 in 327ms

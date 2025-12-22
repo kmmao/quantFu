@@ -1,14 +1,50 @@
 INFO:     Will watch for changes in these directories: ['/Users/sangreal/Documents/GitHub/quantFu/backend']
 INFO:     Uvicorn running on http://127.0.0.1:8888 (Press CTRL+C to quit)
-INFO:     Started reloader process [6360] using WatchFiles
-INFO:     Started server process [6362]
+INFO:     Started reloader process [55388] using WatchFiles
+INFO:     Started server process [55390]
 INFO:     Waiting for application startup.
 /Users/sangreal/Documents/GitHub/quantFu/backend/.venv/lib/python3.9/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
   warnings.warn(
 在使用天勤量化之前，默认您已经知晓并同意以下免责条款，如果不同意请立即停止使用：https://www.shinnytech.com/blog/disclaimer/
 🚀 Starting QuantFu Backend Server...
-Database connection test failed: {'code': 'PGRST205', 'details': None, 'hint': "Perhaps you meant the table 'public.tenants'", 'message': "Could not find the table 'public.accounts' in the schema cache"}
-❌ Database connection failed
-2025-12-23 02:31:22 - services.tqsdk_manager - INFO - 正在连接天勤服务...
-2025-12-23 02:31:23 - services.tqsdk_manager - INFO - ✅ 天勤服务连接成功（单例模式）
+✅ Database connection successful
+2025-12-23 06:56:15 - services.tqsdk_manager - INFO - 正在连接天勤服务...
+2025-12-23 06:56:16 - services.tqsdk_manager - INFO - ✅ 天勤服务连接成功（单例模式）
 INFO:     Application startup complete.
+2025-12-23 06:56:48 - services.kline_service - INFO - 从数据库查询到 tqsdk_symbol: CZCE.TA2505
+2025-12-23 06:56:48 - services.kline_service - INFO - Symbol格式转换: ZCE|F|TA|2505 -> CZCE.TA2505
+2025-12-23 06:56:48 -     INFO - 通知 : 与 wss://free-api.shinnytech.com/t/nfmd/front/mobile 的网络连接已建立
+2025-12-23 06:56:48 - services.kline_service - ERROR - 获取K线失败: 查询合约服务报错 failed to execute graphql operation, errors: [variable instrument_id: [CZCE.TA2505] contains non-existent instrument: CZCE.TA2505]
+2025-12-23 06:56:54 - services.kline_service - INFO - 从数据库查询到 tqsdk_symbol: CZCE.TA2505
+2025-12-23 06:56:54 - services.kline_service - INFO - Symbol格式转换: ZCE|F|TA|2505 -> CZCE.TA2505
+2025-12-23 06:58:19 - services.kline_service - ERROR - 获取K线失败: 获取 ['CZCE.TA2505'] (300) 的K线超时，请检查客户端及网络是否正常
+2025-12-23 06:58:24 - services.kline_service - INFO - 从数据库查询到 tqsdk_symbol: CZCE.TA2505
+2025-12-23 06:58:24 - services.kline_service - INFO - Symbol格式转换: ZCE|F|TA|2505 -> CZCE.TA2505
+2025-12-23 06:59:49 - services.kline_service - ERROR - 获取K线失败: 获取 ['CZCE.TA2505'] (300) 的K线超时，请检查客户端及网络是否正常
+2025-12-23 07:00:49 - services.kline_service - INFO - 从数据库查询到 tqsdk_symbol: SHFE.rb2505
+2025-12-23 07:00:49 - services.kline_service - INFO - Symbol格式转换: SHFE|F|RB|2505 -> SHFE.rb2505
+2025-12-23 07:02:14 - services.kline_service - ERROR - 获取K线失败: 获取 ['SHFE.rb2505'] (300) 的K线超时，请检查客户端及网络是否正常
+WARNING:  WatchFiles detected changes in 'services/kline_service.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+🛑 Shutting down...
+2025-12-23 07:02:50 - services.tqsdk_manager - INFO - 天勤服务连接已关闭
+INFO:     Application shutdown complete.
+INFO:     Finished server process [55390]
+INFO:     Started server process [62410]
+INFO:     Waiting for application startup.
+/Users/sangreal/Documents/GitHub/quantFu/backend/.venv/lib/python3.9/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+在使用天勤量化之前，默认您已经知晓并同意以下免责条款，如果不同意请立即停止使用：https://www.shinnytech.com/blog/disclaimer/
+🚀 Starting QuantFu Backend Server...
+✅ Database connection successful
+2025-12-23 07:02:52 - services.tqsdk_manager - INFO - 正在连接天勤服务...
+2025-12-23 07:02:53 - services.tqsdk_manager - INFO - ✅ 天勤服务连接成功（单例模式）
+INFO:     Application startup complete.
+2025-12-23 07:03:10 - services.kline_service - INFO - 从数据库查询到 tqsdk_symbol: SHFE.rb2505
+2025-12-23 07:03:10 - services.kline_service - INFO - Symbol格式转换: SHFE|F|RB|2505 -> SHFE.rb2505
+2025-12-23 07:03:10 -     INFO - 通知 : 与 wss://free-api.shinnytech.com/t/nfmd/front/mobile 的网络连接已建立
+2025-12-23 07:03:10 - services.kline_service - INFO - 获取K线成功: SHFE.rb2505 300秒 2条
+2025-12-23 07:03:10 - services.kline_service - INFO - 前5条K线数据:
+2025-12-23 07:03:10 - services.kline_service - INFO -   [1] 2025-05-15 14:35:00 - 开:3048.00 高:3116.00 低:3048.00 收:3116.00 量:90
+2025-12-23 07:03:10 - services.kline_service - INFO -   [2] 2025-05-15 14:40:00 - 开:3116.00 高:3116.00 低:3075.00 收:3075.00 量:30
