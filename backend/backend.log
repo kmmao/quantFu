@@ -1,7 +1,7 @@
 INFO:     Will watch for changes in these directories: ['/Users/sangreal/Documents/GitHub/quantFu/backend']
 INFO:     Uvicorn running on http://127.0.0.1:8888 (Press CTRL+C to quit)
-INFO:     Started reloader process [95366] using WatchFiles
-INFO:     Started server process [95368]
+INFO:     Started reloader process [6360] using WatchFiles
+INFO:     Started server process [6362]
 INFO:     Waiting for application startup.
 /Users/sangreal/Documents/GitHub/quantFu/backend/.venv/lib/python3.9/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
   warnings.warn(
@@ -9,14 +9,6 @@ INFO:     Waiting for application startup.
 🚀 Starting QuantFu Backend Server...
 Database connection test failed: {'code': 'PGRST205', 'details': None, 'hint': "Perhaps you meant the table 'public.tenants'", 'message': "Could not find the table 'public.accounts' in the schema cache"}
 ❌ Database connection failed
-2025-12-23 02:16:03 - services.tqsdk_manager - INFO - 正在连接天勤服务...
-2025-12-23 02:16:12 - services.tqsdk_manager - INFO - ✅ 天勤服务连接成功（单例模式）
+2025-12-23 02:31:22 - services.tqsdk_manager - INFO - 正在连接天勤服务...
+2025-12-23 02:31:23 - services.tqsdk_manager - INFO - ✅ 天勤服务连接成功（单例模式）
 INFO:     Application startup complete.
-INFO:     Shutting down
-INFO:     Waiting for application shutdown.
-🛑 Shutting down...
-2025-12-23 02:19:22 -     INFO - 通知 : 与 wss://free-api.shinnytech.com/t/nfmd/front/mobile 的网络连接已建立
-2025-12-23 02:19:22 - services.tqsdk_manager - INFO - 天勤服务连接已关闭
-INFO:     Application shutdown complete.
-INFO:     Finished server process [95368]
-INFO:     Stopping reloader process [95366]

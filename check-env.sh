@@ -497,6 +497,73 @@ else
 fi
 
 # ========================================
+# 8. 检查 Supabase 数据库表
+# ========================================
+print_header "8. Supabase 数据库表"
+
+# 必需的核心表
+REQUIRED_TABLES=(
+    "accounts"
+    "contracts"
+    "trades"
+    "positions"
+    "position_snapshots"
+    "lock_configs"
+    "rollover_records"
+    "market_data"
+    "notifications"
+)
+
+print_check "Docker 容器运行状态"
+if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "quantfu_postgres"; then
+    print_pass
+    print_info "PostgreSQL 容器运行中"
+
+    # 检查数据库表
+    echo -e "\n  ${BLUE}检查数据库表完整性:${NC}\n"
+
+    MISSING_TABLES=0
+    EXISTING_TABLES=0
+
+    for table in "${REQUIRED_TABLES[@]}"; do
+        # 使用 docker exec 查询表是否存在
+        TABLE_EXISTS=$(docker exec quantfu_postgres psql -U postgres -d postgres -tAc \
+            "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = '$table');" \
+            2>/dev/null)
+
+        echo -n "    • $table: "
+        if [ "$TABLE_EXISTS" = "t" ]; then
+            echo -e "${GREEN}✓ 存在${NC}"
+            ((EXISTING_TABLES++))
+            ((PASSED++))
+        else
+            echo -e "${RED}✗ 缺失${NC}"
+            ((MISSING_TABLES++))
+            ((FAILED++))
+        fi
+    done
+
+    echo ""
+    if [ $MISSING_TABLES -eq 0 ]; then
+        echo -e "\n  ${GREEN}✓ 所有 $EXISTING_TABLES 个核心表已创建"
+    else
+        print_fail "缺少 $MISSING_TABLES 个表"
+        echo ""
+        print_info "修复方法:"
+        echo -e "    ${CYAN}1. 运行数据库初始化:${NC}"
+        echo -e "       make db-init"
+        echo ""
+        echo -e "    ${CYAN}2. 或手动执行迁移:${NC}"
+        echo -e "       docker exec -i quantfu_postgres psql -U postgres -d postgres < database/migrations/001_init_schema.sql"
+    fi
+
+else
+    print_warn "PostgreSQL 容器未运行"
+    print_info "启动数据库: make start"
+    print_info "数据库启动后再运行此检查"
+fi
+
+# ========================================
 # 8. 最终总结
 # ========================================
 print_header "检查总结"

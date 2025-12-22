@@ -165,6 +165,71 @@ git diff backend/pyproject.toml
 
 ---
 
+## 2025-12-23: 添加数据库表完整性检查
+
+### ✅ 改进内容
+
+**需求**:
+- 在环境检查中追加 Supabase 数据库表的完整性检查
+
+**实现**:
+在 `check-env.sh` 中添加了第 8 项检查：**Supabase 数据库表**
+
+**检查内容**:
+1. Docker 容器运行状态
+2. 检查 9 个核心表是否存在：
+   - `accounts` - 账户管理
+   - `contracts` - 合约映射
+   - `trades` - 成交记录
+   - `positions` - 持仓明细
+   - `position_snapshots` - 持仓快照
+   - `lock_configs` - 锁仓配置
+   - `rollover_records` - 换月记录
+   - `market_data` - 行情缓存
+   - `notifications` - 系统通知
+
+**检查逻辑**:
+```bash
+# 使用 docker exec 查询表是否存在
+docker exec quantfu_postgres psql -U postgres -d postgres -tAc \
+    "SELECT EXISTS (SELECT FROM information_schema.tables ...)"
+```
+
+**修复建议**:
+如果发现表缺失，脚本会提示：
+```bash
+修复方法:
+  1. 运行数据库初始化:
+     make db-init
+
+  2. 或手动执行迁移:
+     docker exec -i quantfu_postgres psql ...
+```
+
+**检查结果**:
+- ✅ 所有表存在：显示绿色 ✓
+- ❌ 缺少表：显示红色 ✗ 并计入失败数
+- ⚠️  容器未运行：显示警告并跳过检查
+
+**效果**:
+- 初次运行发现 9 个表全部缺失
+- 运行 `make db-init` 后再次检查
+- 显示所有 9 个表 ✓ 存在
+- 检查通过项：28 → 37 (+9)
+
+### 💡 经验总结
+
+**核心教训**:
+> 数据库检查不能只检查配置文件，还要验证实际表结构。
+
+**改进价值**:
+1. ✅ 提前发现数据库未初始化的问题
+2. ✅ 提供清晰的修复指引
+3. ✅ 避免运行时报错 "table does not exist"
+4. ✅ 确保开发环境完整性
+
+---
+
 ## 总结
 
 **核心教训**:
