@@ -816,6 +816,8 @@ cat backend/.env | grep -E "(SUPABASE|DATABASE)"
 - [锁仓触发问题排查](./LOCK_TRIGGER_FAQ.md)
 - [换月任务问题排查](./ROLLOVER_FAQ.md)
 - [天勤行情问题排查](./TQSDK_FAQ.md)
+- [极星数据推送问题排查](./POLAR_DATA_PUSH_FAQ.md)
+- [通知服务问题排查](./NOTIFICATION_FAQ.md)
 - [API 文档](http://localhost:8888/docs) - Swagger UI
 
 ---

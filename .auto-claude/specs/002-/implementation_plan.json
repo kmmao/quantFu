@@ -125,9 +125,9 @@
           "title": "编写通知服务问题FAQ",
           "description": "编写ntfy通知发送失败的诊断和解决方案",
           "estimated_time": "10 min",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["1.5"],
-          "notes": ""
+          "notes": "创建了 docs/troubleshooting/NOTIFICATION_FAQ.md,包含7个问题场景的完整诊断和解决方案:通知发送失败-服务器无响应、通知发送失败-认证错误、通知发送失败-网络超时、通知发送成功但手机未收到、通知内容显示乱码、通知发送导致服务卡顿,以及快速诊断流程。覆盖NTFY_URL配置检查、网络连通性测试、手机客户端排查、优先级说明、Tags对照表、已知限制(同步阻塞、无重试、无认证支持)和最佳实践建议。"
         }
       ]
     },
