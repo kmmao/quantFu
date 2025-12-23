@@ -695,8 +695,8 @@ NTFY_URL=https://ntfy.sh/your-topic
 
 ### Phase 2: 编写故障排除指南 [IN PROGRESS]
 - [x] 2.1 编写WebSocket连接问题FAQ ✅ COMPLETED
-- [ ] 2.2 编写锁仓触发失败FAQ
-- [ ] 2.3 编写换月任务问题FAQ
+- [x] 2.2 编写锁仓触发失败FAQ ✅ COMPLETED
+- [x] 2.3 编写换月任务问题FAQ ✅ COMPLETED
 - [ ] 2.4 编写天勤行情扩展FAQ
 - [ ] 2.5 编写后端服务问题FAQ
 - [ ] 2.6 编写极星数据推送问题FAQ
@@ -725,6 +725,46 @@ NTFY_URL=https://ntfy.sh/your-topic
 - Docker和curl诊断命令
 - SQL诊断查询
 - 问题定位速查表
+
+### 2.2 锁仓触发问题FAQ (COMPLETED)
+
+**文件位置**: `docs/troubleshooting/LOCK_TRIGGER_FAQ.md`
+
+**覆盖的问题场景**:
+1. 锁仓自动执行失败 - NotImplementedError,执行接口未实现
+2. 触发条件不满足 - 阈值/方向/启用状态配置检查
+3. 移动止损不触发 - trailing类型功能未实现
+4. 持仓不足错误 - 并发执行或持仓变化
+5. 锁仓触发服务停止 - 主循环异常导致服务退出
+6. 触发通知未收到 - ntfy配置和网络诊断
+7. 快速诊断流程 - 服务→触发记录→配置→持仓→日志
+
+**特色内容**:
+- 配置检查SQL查询
+- 日志排查关键词
+- 手动确认模式推荐
+- 数据库表关系说明
+
+### 2.3 换月任务问题FAQ (COMPLETED)
+
+**文件位置**: `docs/troubleshooting/ROLLOVER_FAQ.md`
+
+**覆盖的问题场景**:
+1. 换月任务执行失败 - NotImplementedError,平仓/开仓接口未实现
+2. 换月任务卡住 - executing状态超时无恢复机制
+3. 换月提醒未触发 - 配置/阈值/触发条件/持仓检查
+4. 行情数据不足错误 - 静默失败导致难以诊断
+5. 重复换月任务 - 无去重检查机制
+6. 换月监控服务停止 - 主循环异常继续但功能失效
+7. 换月通知未收到 - ntfy配置和网络诊断
+8. 快速诊断流程 - 服务→任务列表→配置→持仓→日志
+
+**特色内容**:
+- 手动重置卡住任务SQL
+- 任务状态流转图
+- 换月指数计算说明
+- 数据库表关系和字段说明
+- 最佳实践建议(手动确认模式)
 
 ### Phase 3: 更新README.md [PENDING]
 - [ ] 3.1 重构FAQ章节结构

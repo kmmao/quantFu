@@ -89,9 +89,9 @@
           "title": "编写换月任务问题FAQ",
           "description": "编写换月任务卡住、执行失败的诊断和解决方案,包括任务状态检查和手动恢复",
           "estimated_time": "20 min",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["1.3"],
-          "notes": ""
+          "notes": "创建了 docs/troubleshooting/ROLLOVER_FAQ.md,包含8个问题场景的完整诊断和解决方案:换月任务执行失败(NotImplementedError)、换月任务卡住(执行超时无恢复机制)、换月提醒未触发(配置/阈值/持仓检查)、行情数据不足错误(静默失败诊断)、重复换月任务(无去重检查)、换月监控服务停止(主循环异常)、换月通知未收到,以及快速诊断流程。覆盖任务状态检查、手动恢复SQL、数据库表关系和最佳实践建议。"
         },
         {
           "subtask_id": "2.4",
