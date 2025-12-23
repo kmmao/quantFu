@@ -1,3 +1,6 @@
 backend/backend.log
 frontend/frontend.log
 backend/.venv/*
+
+# Auto Claude data directory
+.auto-claude/
