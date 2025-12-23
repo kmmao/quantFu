@@ -116,9 +116,9 @@
           "title": "编写极星数据推送问题FAQ",
           "description": "编写极星策略数据推送失败的诊断和解决方案",
           "estimated_time": "15 min",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["1.5"],
-          "notes": ""
+          "notes": "创建了 docs/troubleshooting/POLAR_DATA_PUSH_FAQ.md,包含8个问题场景的完整诊断和解决方案:成交数据推送失败(账户不存在404)、成交数据推送失败(数据库写入500)、成交数据推送失败(参数验证422)、持仓对账不一致(计算差异分析)、极星策略无法连接后端(网络/端口/配置)、数据推送成功但前端不显示(Realtime/缓存问题)、持仓重建失败(position_engine问题),以及快速诊断流程。覆盖TradeEvent和PositionSnapshot字段说明、API端点清单、问题定位表、推送重试最佳实践。"
         },
         {
           "subtask_id": "2.7",

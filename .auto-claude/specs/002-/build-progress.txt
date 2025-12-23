@@ -698,8 +698,8 @@ NTFY_URL=https://ntfy.sh/your-topic
 - [x] 2.2 编写锁仓触发失败FAQ ✅ COMPLETED
 - [x] 2.3 编写换月任务问题FAQ ✅ COMPLETED
 - [x] 2.4 编写天勤行情扩展FAQ ✅ COMPLETED
-- [ ] 2.5 编写后端服务问题FAQ
-- [ ] 2.6 编写极星数据推送问题FAQ
+- [x] 2.5 编写后端服务问题FAQ ✅ COMPLETED
+- [x] 2.6 编写极星数据推送问题FAQ ✅ COMPLETED
 - [ ] 2.7 编写通知服务问题FAQ
 
 ---
@@ -788,6 +788,50 @@ NTFY_URL=https://ntfy.sh/your-topic
 - 快期模拟账号测试方法
 - Docker自动重启配置建议
 - 已知限制说明(无自动重连、单例状态过期、订阅失败无重试)
+
+### 2.5 后端服务问题FAQ (COMPLETED)
+
+**文件位置**: `docs/troubleshooting/BACKEND_FAQ.md`
+
+**覆盖的问题场景**:
+1. 服务启动失败 - 环境变量缺失(SUPABASE_KEY/DATABASE_URL)
+2. 服务启动失败 - 数据库连接失败(网络/认证/初始化)
+3. API返回500错误 - 数据库查询失败、外部服务不可用、数据格式错误
+4. API返回404账户不存在 - accounts表无记录、ID格式错误
+5. API返回422参数验证失败 - Pydantic验证错误、类型不匹配
+6. API响应缓慢或超时 - 慢查询、天勤阻塞、资源不足
+7. 健康检查接口异常 - 组件状态解读、警告处理
+8. 快速诊断流程 - 服务状态→启动日志→健康检查→数据库→错误日志
+
+**特色内容**:
+- 环境变量清单(必填/可选)
+- 常用API端点说明
+- RLS策略诊断
+- 连接池状态检查
+- 资源监控命令
+
+### 2.6 极星数据推送问题FAQ (COMPLETED)
+
+**文件位置**: `docs/troubleshooting/POLAR_DATA_PUSH_FAQ.md`
+
+**覆盖的问题场景**:
+1. 成交数据推送失败 - 账户不存在(404错误,accounts表无记录)
+2. 成交数据推送失败 - 数据库写入错误(500错误,trades表/约束问题)
+3. 成交数据推送失败 - 参数验证错误(422错误,Pydantic验证失败)
+4. 持仓对账不一致 - 计算持仓与极星持仓差异分析和修复
+5. 极星策略无法连接后端 - 网络/端口/防火墙/URL配置问题
+6. 数据推送成功但前端不显示 - Realtime订阅/缓存/数据过滤问题
+7. 持仓重建失败 - position_engine初始化/positions表约束问题
+8. 快速诊断流程 - 服务状态→网络→账户→请求格式→数据库→日志
+
+**特色内容**:
+- TradeEvent字段说明表(类型/必填/说明)
+- PositionSnapshot字段说明表
+- API端点清单(/api/trades, /api/position_snapshots等)
+- 问题定位表(现象→可能问题→首先检查)
+- 推送重试最佳实践(指数退避示例代码)
+- 对账差异分析(diff_long/diff_short解读)
+- 连接测试脚本
 
 ### Phase 3: 更新README.md [PENDING]
 - [ ] 3.1 重构FAQ章节结构
