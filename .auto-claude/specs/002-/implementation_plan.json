@@ -98,9 +98,9 @@
           "title": "编写天勤行情扩展FAQ",
           "description": "扩展现有的天勤行情问题,添加更多场景如连接超时、行情延迟等",
           "estimated_time": "15 min",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["1.4"],
-          "notes": ""
+          "notes": "创建了 docs/troubleshooting/TQSDK_FAQ.md,包含9个问题场景的完整诊断和解决方案:天勤连接失败、账号未配置、行情数据不更新、合约订阅失败、价格显示NaN或0、行情服务崩溃、连接超时、行情数据延迟,以及快速诊断流程。覆盖环境配置检查、网络诊断、合约格式映射表(极星↔天勤)、交易时段说明、Docker命令和SQL诊断查询。"
         },
         {
           "subtask_id": "2.5",
