@@ -693,14 +693,38 @@ NTFY_URL=https://ntfy.sh/your-topic
 
 ---
 
-### Phase 2: 编写故障排除指南 [PENDING]
-- [ ] 2.1 编写WebSocket连接问题FAQ
+### Phase 2: 编写故障排除指南 [IN PROGRESS]
+- [x] 2.1 编写WebSocket连接问题FAQ ✅ COMPLETED
 - [ ] 2.2 编写锁仓触发失败FAQ
 - [ ] 2.3 编写换月任务问题FAQ
 - [ ] 2.4 编写天勤行情扩展FAQ
 - [ ] 2.5 编写后端服务问题FAQ
 - [ ] 2.6 编写极星数据推送问题FAQ
 - [ ] 2.7 编写通知服务问题FAQ
+
+---
+
+## FAQ Documentation Progress
+
+### 2.1 WebSocket连接问题FAQ (COMPLETED)
+
+**文件位置**: `docs/troubleshooting/WEBSOCKET_FAQ.md`
+
+**覆盖的问题场景**:
+1. WebSocket连接断开 - 网络不稳定、服务器重启、超时等原因的诊断和解决
+2. 连接超时 - 服务未启动、端口配置错误、网络延迟的排查
+3. 重连失败 - JWT Token过期、连接数限制、前端自动重连实现
+4. 订阅数据不更新 - Realtime未开启、RLS策略、订阅配置错误
+5. JWT签名错误 - JWT_SECRET不匹配、Tenant配置、API密钥问题
+6. 内存泄漏 - Channel未清理、重复订阅、正确的React组件清理模式
+7. 快速诊断流程 - 服务状态→网络→前端配置→后端日志→JWT的诊断顺序
+
+**特色内容**:
+- 前端和后端双向排查步骤
+- 实用的TypeScript代码示例
+- Docker和curl诊断命令
+- SQL诊断查询
+- 问题定位速查表
 
 ### Phase 3: 更新README.md [PENDING]
 - [ ] 3.1 重构FAQ章节结构

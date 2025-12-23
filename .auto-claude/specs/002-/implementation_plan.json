@@ -64,16 +64,16 @@
       "phase_id": "phase-2",
       "name": "编写故障排除指南",
       "description": "为每个识别的问题场景编写详细的诊断步骤和解决方案",
-      "status": "pending",
+      "status": "in_progress",
       "subtasks": [
         {
           "subtask_id": "2.1",
           "title": "编写WebSocket连接问题FAQ",
           "description": "编写WebSocket连接断开重连、连接超时的诊断和解决方案,包括前端和后端排查步骤",
           "estimated_time": "20 min",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["1.1"],
-          "notes": ""
+          "notes": "创建了 docs/troubleshooting/WEBSOCKET_FAQ.md,包含7个问题场景的完整诊断和解决方案:WebSocket连接断开、连接超时、重连失败、订阅数据不更新、JWT签名错误、内存泄漏,以及快速诊断流程。覆盖前端Supabase Realtime和后端FastAPI WebSocket两个层面的排查步骤。"
         },
         {
           "subtask_id": "2.2",
