@@ -1,0 +1,273 @@
+# QuantFu 期货量化管理平台 - 启动方式分析
+
+**分析时间:** 2024-12-24
+**分析者:** Claude Agent (subtask-1-1)
+
+---
+
+## 📋 概述
+
+QuantFu 是一个中国期货量化交易管理平台，集成极星量化策略与天勤行情，实现持仓监控、锁仓管理、换月提醒等功能。
+
+系统架构:
+```
+极星量化(v12.py策略) → 推送成交数据 → 后端服务(FastAPI)
+                                        ↓
+天勤TqSDK行情 → 实时价格推送 → Supabase数据库 → WebSocket → Web前端(Next.js)
+```
+
+---
+
+## 🔧 依赖要求
+
+### 必须安装的工具
+| 工具 | 版本要求 | 用途 |
+|------|----------|------|
+| Docker & Docker Compose | v2+ | 运行 Supabase 服务 |
+| Node.js | 18+ | 前端开发和运行 |
+| Python | 3.11+ | 后端开发和运行 |
+| uv (可选) | 最新版 | Python 依赖管理加速 |
+
+### 必须配置的环境变量 (.env)
+```env
+POSTGRES_PASSWORD=your-strong-password        # 数据库密码 (必须修改)
+JWT_SECRET=your-jwt-secret-32-chars          # JWT密钥,至少32字符 (必须修改)
+TQSDK_USER=your-tqsdk-username               # 天勤账号 (必须修改)
+TQSDK_PASSWORD=your-tqsdk-password           # 天勤密码 (必须修改)
+POLAR_API_KEY=your-polar-api-key             # 极星API密钥 (必须修改)
+```
+
+---
+
+## 🚀 启动方式一: 一键启动 (推荐新手)
+
+### 命令
+```bash
+# 1. 克隆项目
+git clone https://github.com/allen/quantFu.git
+cd quantFu
+
+# 2. 配置环境变量
+cp .env.example .env
+vim .env  # 修改必要配置
+
+# 3. 一键启动
+./scripts/start.sh
+
+# 停止服务
+./scripts/stop.sh
+
+# 系统监控
+./scripts/monitor.sh
+```
+
+### 启动脚本执行流程
+1. [1/6] 检查环境 - 验证 .env 文件和必要配置
+2. [2/6] 启动Supabase服务 - docker-compose up -d
+3. [3/6] 检查数据库 - 自动执行迁移和种子数据
+4. [4/6] 测试天勤连接 - 验证 TqSDK 账号
+5. [5/6] 启动后端服务 - uvicorn 后台运行
+6. [6/6] 启动前端服务 - npm run dev 后台运行
+
+### 特点
+- 自动检查环境配置
+- 自动初始化数据库
+- 自动安装依赖
+- 提供健康检查
+
+---
+
+## 🚀 启动方式二: 手动启动 (推荐有经验者)
+
+### 步骤 1: 启动 Supabase 数据库
+```bash
+# 复制并修改配置
+cp .env.example .env
+vim .env
+
+# 启动容器
+docker-compose up -d
+
+# 等待服务就绪 (约30秒)
+docker-compose logs -f
+
+# 访问管理界面
+open http://localhost:3001
+```
+
+### 步骤 2: 初始化数据库
+```bash
+# 执行数据库迁移
+docker exec -i quantfu_postgres psql -U postgres -d postgres < database/migrations/001_init_schema.sql
+
+# 导入种子数据 (需先编辑填写实际账户和持仓)
+docker exec -i quantfu_postgres psql -U postgres -d postgres < database/seed/002_seed_data.sql
+```
+
+### 步骤 3: 启动后端服务
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8888
+```
+
+### 步骤 4: 启动前端服务
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+---
+
+## 🚀 启动方式三: 开发模式 (Makefile)
+
+### 快速开始
+```bash
+make check      # 检查环境依赖
+make install    # 安装所有依赖
+make dev        # 启动完整开发环境 (数据库+后端+前端)
+make dev-stop   # 停止开发环境
+```
+
+### 核心命令列表
+| 命令 | 说明 |
+|------|------|
+| `make help` | 显示所有可用命令 |
+| `make check` | 检查开发环境依赖 |
+| `make install` | 安装后端和前端依赖 |
+| `make dev` | 启动完整开发环境 |
+| `make dev-stop` | 停止开发环境 |
+| `make logs` | 查看实时日志 |
+| `make logs COMPONENT=backend` | 只查看后端日志 |
+| `make logs COMPONENT=frontend` | 只查看前端日志 |
+
+### 环境管理命令
+| 命令 | 说明 |
+|------|------|
+| `make start` | 启动 Supabase 服务 |
+| `make stop` | 停止所有服务 |
+| `make restart` | 重启所有服务 |
+| `make status` | 查看服务状态 |
+| `make clean` | 清理容器和数据 (危险) |
+
+### 数据库命令
+| 命令 | 说明 |
+|------|------|
+| `make db-init` | 初始化数据库表结构 |
+| `make db-seed` | 导入初始数据 |
+| `make db-reset` | 重置数据库 (危险) |
+| `make db-shell` | 进入数据库 Shell |
+
+### 测试命令
+```bash
+make test                    # 运行所有测试
+make test SCOPE=backend      # 只运行后端测试
+make test SCOPE=frontend     # 只运行前端测试
+```
+
+---
+
+## 🐳 Docker Compose 服务架构
+
+### 容器列表
+| 容器名 | 镜像 | 端口 | 用途 |
+|--------|------|------|------|
+| quantfu_postgres | supabase/postgres:15.8.1.085 | 5432 | PostgreSQL 数据库 |
+| quantfu_studio | supabase/studio:2025.12.09 | 3001 | Supabase 管理界面 |
+| quantfu_kong | kong:2.8.1 | 8000, 8443 | API 网关 |
+| quantfu_rest | postgrest/postgrest:v14.1 | 3333 | 自动生成 REST API |
+| quantfu_realtime | supabase/realtime:v2.68.0 | 4000 | WebSocket 实时推送 |
+| quantfu_meta | supabase/postgres-meta:v0.93.1 | 8080 | 元数据 API |
+
+### 网络
+- 网络名称: `quantfu_network`
+- 数据持久化卷: `postgres_data`
+
+---
+
+## 🌐 访问地址汇总
+
+### 主要服务
+| 服务 | 地址 | 说明 |
+|------|------|------|
+| 前端界面 | http://localhost:3000 | Next.js 应用 |
+| 后端 API 文档 (Swagger) | http://localhost:8888/docs | FastAPI Swagger UI |
+| 后端 API 文档 (ReDoc) | http://localhost:8888/redoc | FastAPI ReDoc |
+| Supabase Studio | http://localhost:3001 | 数据库管理界面 |
+
+### 后端服务
+| 服务 | 地址 | 说明 |
+|------|------|------|
+| 健康检查 | http://localhost:8888/health | 基础健康状态 |
+| 详细健康检查 | http://localhost:8888/health/detailed | 详细系统状态 |
+| PostgreSQL | localhost:5432 | 数据库直连 |
+| PostgREST API | http://localhost:3333 | 自动生成的 REST API |
+| Kong API 网关 | http://localhost:8000 | Supabase API 入口 |
+| Realtime WebSocket | http://localhost:4000 | 实时推送 |
+
+### 主要 API 接口
+```
+POST /api/trades              # 接收极星成交推送
+POST /api/position_snapshots  # 接收持仓快照
+GET  /api/positions/{account_id}  # 查询持仓
+WS   /ws/positions            # WebSocket实时推送
+GET  /api/kline/{symbol}      # K线数据
+GET  /api/quote/{symbol}      # 实时行情
+```
+
+---
+
+## 📝 常见问题
+
+### 1. Docker 容器启动失败
+```bash
+# 查看日志
+docker-compose logs postgres
+
+# 5432 端口被占用
+lsof -i :5432
+kill -9 <PID>
+
+# 重新启动
+docker-compose down
+docker-compose up -d
+```
+
+### 2. 验证数据库连接
+```bash
+docker exec -it quantfu_postgres psql -U postgres -d postgres
+
+# 常用 SQL 命令
+SELECT * FROM accounts;
+SELECT * FROM contracts;
+SELECT * FROM v_positions_summary;
+\q  # 退出
+```
+
+### 3. 天勤行情无数据
+```bash
+# 检查配置
+cat .env | grep TQSDK
+
+# 查看后端日志
+docker-compose logs backend
+
+# 测试连接
+cd backend && python test_tqsdk.py
+```
+
+---
+
+## ✅ 分析完成
+
+**启动方式总结:**
+1. **一键启动** (`./scripts/start.sh`) - 适合新手，自动化程度最高
+2. **手动启动** - 适合需要精细控制的场景
+3. **开发模式** (`make dev`) - 适合开发者，支持热重载
+
+**关键配置项:** 5个必须修改的环境变量
+**服务组件:** 6个 Docker 容器 + 1个后端 + 1个前端
+**访问入口:** 前端 :3000 / API :8888 / Studio :3001
