@@ -1,0 +1,250 @@
+{
+  "feature": "添加常见问题与故障排除指南",
+  "description": "README.md只有3个常见问题（Docker启动失败、持仓数据不一致、天勤行情无数据），缺少更多实际使用中常见的问题场景，如WebSocket连接断开重连、锁仓触发失败、换月任务卡住等。",
+  "created_at": "2025-12-23T18:36:47.419Z",
+  "updated_at": "2025-12-24T02:45:00.000Z",
+  "status": "in_progress",
+  "planStatus": "approved",
+  "estimated_effort": "2-3 hours",
+  "phases": [
+    {
+      "phase_id": "phase-1",
+      "name": "问题场景调研",
+      "description": "分析代码库,识别所有可能的故障场景和错误情况",
+      "status": "pending",
+      "subtasks": [
+        {
+          "subtask_id": "1.1",
+          "title": "分析WebSocket连接相关问题",
+          "description": "研究main.py中的WebSocket实现,识别断开重连、连接超时等常见问题场景",
+          "estimated_time": "15 min",
+          "status": "completed",
+          "dependencies": [],
+          "notes": "分析完成。识别了6个常见问题场景:WebSocket连接断开、连接超时、重连失败、订阅失败、内存泄漏、认证失败。发现后端WebSocket实现基础(无心跳/超时/认证),前端Supabase Realtime有已知JWT签名问题。详细发现记录在build-progress.txt。"
+        },
+        {
+          "subtask_id": "1.2",
+          "title": "分析锁仓触发服务问题",
+          "description": "研究lock_trigger_service.py和lock_engine.py,识别锁仓触发失败、执行失败等问题",
+          "estimated_time": "15 min",
+          "status": "completed",
+          "dependencies": [],
+          "notes": "分析完成。识别了6个常见问题场景:锁仓自动执行失败、触发条件不满足、移动止损不触发、持仓不足错误、触发服务停止、通知未收到。关键发现:1) _execute_lock_order方法未实现(抛出NotImplementedError),导致所有自动执行失败;2) trailing触发类型未实现;3) 服务主循环异常会导致服务完全停止。详细分析记录在build-progress.txt。"
+        },
+        {
+          "subtask_id": "1.3",
+          "title": "分析换月服务问题",
+          "description": "研究rollover_service.py和rollover_monitor.py,识别换月任务卡住、执行失败等问题",
+          "estimated_time": "15 min",
+          "status": "completed",
+          "dependencies": [],
+          "notes": "分析完成。识别了8个常见问题:1) _close_old_position和_open_new_position均未实现(抛出NotImplementedError),所有自动换月执行失败;2) 任务可能永久卡在executing状态无恢复机制;3) 监控循环静默失败;4) 行情数据和到期日查询静默失败难以诊断;5) 无重复任务检测;6) 通知发送同步阻塞。提供了诊断SQL和数据库表结构说明。详细分析记录在build-progress.txt。"
+        },
+        {
+          "subtask_id": "1.4",
+          "title": "分析天勤服务问题",
+          "description": "研究tqsdk_service.py和tqsdk_manager.py,识别连接失败、行情订阅失败等问题",
+          "estimated_time": "15 min",
+          "status": "pending",
+          "dependencies": [],
+          "notes": ""
+        },
+        {
+          "subtask_id": "1.5",
+          "title": "分析数据库和API问题",
+          "description": "研究db.py和main.py中的API接口,识别数据库连接、API调用失败等问题",
+          "estimated_time": "15 min",
+          "status": "pending",
+          "dependencies": [],
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "phase_id": "phase-2",
+      "name": "编写故障排除指南",
+      "description": "为每个识别的问题场景编写详细的诊断步骤和解决方案",
+      "status": "pending",
+      "subtasks": [
+        {
+          "subtask_id": "2.1",
+          "title": "编写WebSocket连接问题FAQ",
+          "description": "编写WebSocket连接断开重连、连接超时的诊断和解决方案,包括前端和后端排查步骤",
+          "estimated_time": "20 min",
+          "status": "pending",
+          "dependencies": ["1.1"],
+          "notes": ""
+        },
+        {
+          "subtask_id": "2.2",
+          "title": "编写锁仓触发失败FAQ",
+          "description": "编写锁仓触发失败、执行失败的诊断和解决方案,包括配置检查和日志排查",
+          "estimated_time": "20 min",
+          "status": "pending",
+          "dependencies": ["1.2"],
+          "notes": ""
+        },
+        {
+          "subtask_id": "2.3",
+          "title": "编写换月任务问题FAQ",
+          "description": "编写换月任务卡住、执行失败的诊断和解决方案,包括任务状态检查和手动恢复",
+          "estimated_time": "20 min",
+          "status": "pending",
+          "dependencies": ["1.3"],
+          "notes": ""
+        },
+        {
+          "subtask_id": "2.4",
+          "title": "编写天勤行情扩展FAQ",
+          "description": "扩展现有的天勤行情问题,添加更多场景如连接超时、行情延迟等",
+          "estimated_time": "15 min",
+          "status": "pending",
+          "dependencies": ["1.4"],
+          "notes": ""
+        },
+        {
+          "subtask_id": "2.5",
+          "title": "编写后端服务问题FAQ",
+          "description": "编写后端服务启动失败、API报错的诊断和解决方案",
+          "estimated_time": "15 min",
+          "status": "pending",
+          "dependencies": ["1.5"],
+          "notes": ""
+        },
+        {
+          "subtask_id": "2.6",
+          "title": "编写极星数据推送问题FAQ",
+          "description": "编写极星策略数据推送失败的诊断和解决方案",
+          "estimated_time": "15 min",
+          "status": "pending",
+          "dependencies": ["1.5"],
+          "notes": ""
+        },
+        {
+          "subtask_id": "2.7",
+          "title": "编写通知服务问题FAQ",
+          "description": "编写ntfy通知发送失败的诊断和解决方案",
+          "estimated_time": "10 min",
+          "status": "pending",
+          "dependencies": ["1.5"],
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "phase_id": "phase-3",
+      "name": "更新README.md",
+      "description": "将编写的FAQ内容整合到README.md中",
+      "status": "pending",
+      "subtasks": [
+        {
+          "subtask_id": "3.1",
+          "title": "重构FAQ章节结构",
+          "description": "将现有3个FAQ扩展为分类的故障排除指南,增加清晰的分类和目录",
+          "estimated_time": "15 min",
+          "status": "pending",
+          "dependencies": ["2.1", "2.2", "2.3", "2.4", "2.5", "2.6", "2.7"],
+          "notes": ""
+        },
+        {
+          "subtask_id": "3.2",
+          "title": "添加新的FAQ内容",
+          "description": "将所有新编写的FAQ内容添加到README.md的常见问题章节",
+          "estimated_time": "20 min",
+          "status": "pending",
+          "dependencies": ["3.1"],
+          "notes": ""
+        },
+        {
+          "subtask_id": "3.3",
+          "title": "添加快速诊断指南",
+          "description": "添加一个快速诊断流程图或检查清单,帮助用户快速定位问题",
+          "estimated_time": "15 min",
+          "status": "pending",
+          "dependencies": ["3.2"],
+          "notes": ""
+        }
+      ]
+    },
+    {
+      "phase_id": "phase-4",
+      "name": "验证和完善",
+      "description": "验证文档的准确性和可读性",
+      "status": "pending",
+      "subtasks": [
+        {
+          "subtask_id": "4.1",
+          "title": "验证命令和代码示例",
+          "description": "确保所有命令和代码示例可以正确执行",
+          "estimated_time": "15 min",
+          "status": "pending",
+          "dependencies": ["3.3"],
+          "notes": ""
+        },
+        {
+          "subtask_id": "4.2",
+          "title": "检查文档格式和链接",
+          "description": "检查Markdown格式、内部链接是否正确",
+          "estimated_time": "10 min",
+          "status": "pending",
+          "dependencies": ["4.1"],
+          "notes": ""
+        },
+        {
+          "subtask_id": "4.3",
+          "title": "更新build-progress.txt",
+          "description": "记录完成状态和任何需要注意的事项",
+          "estimated_time": "5 min",
+          "status": "pending",
+          "dependencies": ["4.2"],
+          "notes": ""
+        }
+      ]
+    }
+  ],
+  "new_faq_items": {
+    "连接问题": [
+      "WebSocket连接断开重连",
+      "天勤行情连接超时",
+      "数据库连接池耗尽"
+    ],
+    "服务问题": [
+      "后端服务启动失败",
+      "锁仓触发失败",
+      "换月任务卡住",
+      "通知发送失败"
+    ],
+    "数据问题": [
+      "极星数据推送失败",
+      "持仓数据不一致（已有,需扩展）",
+      "行情数据延迟"
+    ]
+  },
+  "success_criteria": [
+    "README.md的FAQ部分从3个问题扩展到至少10个问题",
+    "每个问题包含:问题描述、诊断步骤、解决方案",
+    "添加快速诊断指南帮助用户快速定位问题类型",
+    "所有命令和代码示例经过验证"
+  ],
+  "workflow_type": "documentation",
+  "services_involved": [
+    "backend/main.py",
+    "backend/services/tqsdk_service.py",
+    "backend/services/lock_trigger_service.py",
+    "backend/services/rollover_service.py",
+    "backend/engines/lock_engine.py",
+    "backend/utils/notification.py"
+  ],
+  "final_acceptance": [
+    "README.md FAQ部分扩展到10+个问题",
+    "每个FAQ包含完整的诊断步骤和解决方案",
+    "添加快速诊断指南",
+    "文档格式正确,所有链接有效"
+  ],
+  "spec_file": "spec.md",
+  "qa_status": {
+    "status": "pending",
+    "tests_passed": "",
+    "issues": ""
+  }
+}

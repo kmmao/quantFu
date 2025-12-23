@@ -1,0 +1,413 @@
+# Build Progress: 002- 添加常见问题与故障排除指南
+
+## Status: In Progress - Phase 1
+**Last Updated**: 2024-12-24
+
+---
+
+## Overview
+扩展README.md的常见问题部分,从现有3个FAQ增加到10+个,添加更多实际使用中常见的问题场景及其诊断步骤和解决方案。
+
+## Current Progress
+
+### Phase 1: 问题场景调研 [IN PROGRESS]
+- [x] 1.1 分析WebSocket连接相关问题 ✅ COMPLETED
+- [x] 1.2 分析锁仓触发服务问题 ✅ COMPLETED
+- [x] 1.3 分析换月服务问题 ✅ COMPLETED
+- [ ] 1.4 分析天勤服务问题
+- [ ] 1.5 分析数据库和API问题
+
+---
+
+## Research Findings
+
+### 1.1 WebSocket连接问题分析 (COMPLETED)
+
+#### A. 后端WebSocket实现 (backend/main.py)
+**位置**: lines 1902-1913, endpoint `/ws/positions`
+
+**当前实现特点**:
+- 基础WebSocket实现,仅处理 `WebSocketDisconnect` 异常
+- 无心跳/ping-pong机制
+- 无连接超时配置
+- 无认证机制
+- 无消息速率限制
+- 无重连逻辑(服务端)
+
+**代码片段**:
+```python
+@app.websocket("/ws/positions")
+async def websocket_positions(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        while True:
+            _ = await websocket.receive_text()
+            await websocket.send_json({"message": "Connected"})
+    except WebSocketDisconnect:
+        print("WebSocket disconnected")
+```
+
+#### B. 前端Supabase Realtime (frontend/lib/supabase*.ts)
+
+**配置** (frontend/lib/supabase.ts):
+```typescript
+realtime: {
+  params: {
+    eventsPerSecond: 10,
+  },
+}
+```
+
+**订阅函数** (frontend/lib/supabase-helpers.ts):
+- `subscribeToPositions(accountId, callback)` - 持仓变化订阅
+- `subscribeToStrategySignals(instanceId, callback)` - 策略信号订阅
+- `subscribeToTable(tableName, callback)` - 通用表变化订阅
+
+**问题**:
+- 无显式错误处理
+- 订阅失败可能静默
+- 无重连逻辑
+
+#### C. 已知问题 (SUPABASE_REALTIME_FIX_IN_PROGRESS.md)
+
+**问题**: Supabase Realtime WebSocket连接失败
+**错误**: `ErrorConnectingToWebsocket: {:error, :signature_error}`
+**表现**: 前端显示 "数据加载失败 TypeError: Failed to fetch"
+
+**根因分析**:
+1. JWT签名验证失败
+2. Tenant配置问题 (realtime vs realtime-dev)
+3. 加密jwt_secret与API_JWT_SECRET不匹配
+
+**状态**: 🟡 进行中
+
+#### D. 识别的常见问题场景
+
+| 问题场景 | 症状 | 可能原因 |
+|---------|------|---------|
+| WebSocket连接断开 | 实时数据停止更新 | 网络不稳定、服务器重启、超时 |
+| 连接超时 | 连接建立失败 | 网络延迟、防火墙、服务不可用 |
+| 重连失败 | 断开后无法自动恢复 | 无自动重连机制、JWT过期 |
+| 订阅失败 | 数据不实时更新 | Realtime服务配置错误、JWT问题 |
+| 内存泄漏 | 长时间运行后变慢 | 未正确清理channel订阅 |
+| 认证失败 | 403错误 | JWT签名错误、Token过期 |
+
+### 1.2 锁仓触发服务问题分析 (COMPLETED)
+
+#### A. 锁仓触发服务 (backend/services/lock_trigger_service.py)
+
+**主要功能**:
+- 每1秒轮询检查 `v_active_lock_configs` 视图
+- 支持3种触发类型: profit(利润)、price(价格)、trailing(移动止损)
+- 自动执行或等待确认模式
+- 触发后发送ntfy通知
+
+**代码结构**:
+```
+LockTriggerService
+├── start() - 启动监控服务主循环
+├── stop() - 停止服务
+├── check_all_configs() - 检查所有活跃配置
+├── _check_config() - 检查单个配置是否触发
+├── _create_trigger_record() - 创建触发记录
+├── _send_trigger_notification() - 发送触发通知
+└── _send_execution_notification() - 发送执行完成通知
+```
+
+**已识别问题**:
+
+| 问题 | 代码位置 | 影响 |
+|------|---------|------|
+| 服务主循环异常崩溃 | line 37-39 | 未捕获的异常导致服务完全停止 |
+| 移动止损未实现 | line 130-136 | trailing触发类型不会触发锁仓 |
+| 配置检查失败静默 | line 65-66 | 数据库查询失败只记录日志 |
+| 通知发送无重试 | line 256-260 | ntfy服务故障时通知丢失 |
+
+#### B. 锁仓执行引擎 (backend/engines/lock_engine.py)
+
+**主要功能**:
+- 执行锁仓订单(反向开仓)
+- 验证持仓是否充足
+- 计算锁定利润
+- 记录执行历史
+
+**代码结构**:
+```
+LockEngine
+├── execute_lock() - 主执行入口
+├── _execute_lock_order() - ⚠️ 未实现!
+├── _get_position() - 获取持仓信息
+├── _get_contract_multiplier() - 获取合约乘数
+├── _update_position_lock() - 更新持仓锁定状态
+├── _save_execution_history() - 保存执行历史
+└── _update_trigger_status() - 更新触发记录状态
+```
+
+**🚨 严重问题: 锁仓下单未实现**
+
+`_execute_lock_order` 方法 (line 203-206) 抛出 `NotImplementedError`:
+```python
+raise NotImplementedError(
+    "锁仓下单接口未实现,请根据极星API文档完成集成。\n"
+    "参考上方TODO注释中的3种集成方式。"
+)
+```
+
+**集成方式选择** (需要完成其中之一):
+1. **HTTP API**: 调用极星策略HTTP接口下单
+2. **WebSocket**: 通过WebSocket推送锁仓指令
+3. **被动监听**: 极星策略监听数据库/WebSocket自行判断下单
+
+#### C. 数据库表结构
+
+**相关表**:
+- `lock_configs` - 锁仓配置
+- `lock_triggers` - 触发记录 (execution_status: pending/executed/failed/cancelled)
+- `lock_executions` - 执行历史
+
+**视图**:
+- `v_active_lock_configs` - 活跃配置(含当前持仓/利润)
+- `v_lock_trigger_summary` - 触发汇总
+
+#### D. 识别的常见问题场景
+
+| 问题场景 | 症状 | 根因 | 诊断方法 |
+|---------|------|------|---------|
+| 锁仓自动执行失败 | lock_triggers表status='failed' | _execute_lock_order未实现 | 查看error_message字段 |
+| 触发条件不满足 | 持仓有利润但未触发 | 阈值设置过高或方向不匹配 | 检查lock_configs配置 |
+| 移动止损不触发 | trailing类型配置无响应 | 功能未实现 | 改用price触发类型 |
+| 持仓不足错误 | 执行失败"持仓不足" | 并发执行或持仓已变化 | 检查positions表当前持仓 |
+| 触发服务停止 | 不再有新的触发记录 | 服务主循环异常退出 | 检查后端服务日志 |
+| 通知未收到 | 触发成功但无通知 | ntfy服务不可达/网络超时 | 检查NTFY_URL环境变量 |
+
+#### E. 诊断SQL查询
+
+**查看最近触发记录**:
+```sql
+SELECT * FROM v_lock_trigger_summary
+ORDER BY triggered_at DESC LIMIT 10;
+```
+
+**查看失败的触发**:
+```sql
+SELECT * FROM lock_triggers
+WHERE execution_status = 'failed'
+ORDER BY triggered_at DESC;
+```
+
+**检查活跃配置状态**:
+```sql
+SELECT * FROM v_active_lock_configs;
+```
+
+### 1.3 换月服务问题分析 (COMPLETED)
+
+#### A. 换月执行服务 (backend/services/rollover_service.py)
+
+**主要功能**:
+- 监控主力合约切换
+- 检测到期合约
+- 创建换月任务
+- 执行换月操作(平旧仓+开新仓)
+
+**代码结构**:
+```
+RolloverService
+├── create_config() - 创建换月配置
+├── get_configs() - 获取换月配置列表
+├── create_task() - 创建换月任务
+├── get_pending_tasks() - 获取待执行任务
+├── update_task_status() - 更新任务状态
+├── execute_rollover() - 执行换月操作
+│   ├── _close_old_position() - ⚠️ 未实现!
+│   └── _open_new_position() - ⚠️ 未实现!
+├── check_main_contract_switches() - 检查主力切换
+├── check_expiring_contracts() - 检查到期合约
+├── process_pending_tasks() - 处理待执行任务
+└── start_monitoring() - 启动监控服务
+```
+
+**🚨 严重问题: 换月执行接口未实现**
+
+`_close_old_position` (line 321-324) 和 `_open_new_position` (line 410-413) 都抛出 `NotImplementedError`:
+```python
+raise NotImplementedError(
+    "换月平仓接口未实现,请根据极星API文档完成集成。\n"
+    "参考上方TODO注释中的实现方式。"
+)
+```
+
+**结果**: 所有自动换月执行都会失败,任务会被创建但执行必定失败。
+
+#### B. 换月监测服务 (backend/services/rollover_monitor.py)
+
+**主要功能**:
+- 监测主力合约切换
+- 计算换月指数
+- 发送换月提醒
+- 生成换月建议
+
+**换月判断标准**:
+- 新合约持仓量 > 旧合约持仓量 × 1.2
+- 新合约成交量持续3天超过旧合约
+- 距离到期 < 15个交易日
+
+**代码结构**:
+```
+RolloverMonitor
+├── calculate_rollover_index() - 计算换月指数
+├── check_rollover_needed() - 检查是否需要换月
+├── _get_market_data() - 获取行情数据 (静默失败!)
+├── _get_days_to_expiry() - 获取到期天数 (静默失败!)
+├── _get_recommendation() - 生成换月建议
+├── send_rollover_notification() - 发送换月通知
+├── monitor_all_varieties() - 监测所有品种
+└── _find_next_contract() - 查找下一合约
+```
+
+#### C. 已识别问题
+
+| 问题 | 代码位置 | 影响 | 严重程度 |
+|------|---------|------|---------|
+| 换月平仓接口未实现 | rollover_service.py:321-324 | 所有自动执行失败 | 🔴 严重 |
+| 换月开仓接口未实现 | rollover_service.py:410-413 | 所有自动执行失败 | 🔴 严重 |
+| 任务卡在executing状态 | rollover_service.py:217 | 任务无法恢复 | 🟠 中等 |
+| 监控循环静默失败 | rollover_service.py:650-651 | 服务看似运行但不工作 | 🟠 中等 |
+| 行情数据查询静默失败 | rollover_monitor.py:138-139 | 难以诊断"行情数据不足" | 🟡 低 |
+| 到期日查询静默失败 | rollover_monitor.py:155-156 | 到期提醒可能失效 | 🟡 低 |
+| 无重复任务检测 | rollover_service.py:500-510 | 可能创建重复任务 | 🟡 低 |
+| 通知发送同步阻塞 | rollover_monitor.py:197-205 | 3秒超时可能阻塞 | 🟡 低 |
+
+#### D. 任务状态流转
+
+```
+pending → executing → completed
+                  ↘→ failed
+
+⚠️ 问题: 任务可能永久卡在 executing 状态
+```
+
+#### E. 识别的常见问题场景
+
+| 问题场景 | 症状 | 根因 | 诊断方法 |
+|---------|------|------|---------|
+| 换月任务执行失败 | rollover_tasks表status='failed' | 极星API集成未完成 | 查看error_message字段 |
+| 换月任务卡住 | status='executing'超过1小时 | 执行过程异常/服务重启 | 查询stuck任务并手动重置 |
+| 换月提醒未触发 | 主力已切换但无通知 | 换月指数<1.2或数据查询失败 | 检查换月指数计算 |
+| "行情数据不足"错误 | check_rollover_needed返回此消息 | market_data表无数据或查询异常 | 检查market_data表和日志 |
+| 重复换月任务 | 同一持仓创建多个任务 | 无去重检查机制 | 检查rollover_tasks表 |
+| 监控服务无响应 | 无新任务创建 | start_monitoring循环异常 | 检查后端服务日志 |
+
+#### F. 诊断SQL查询
+
+**查看最近换月任务**:
+```sql
+SELECT id, old_symbol, new_symbol, status, error_message,
+       created_at, started_at, completed_at
+FROM rollover_tasks
+ORDER BY created_at DESC LIMIT 10;
+```
+
+**查看卡住的任务(执行超过1小时)**:
+```sql
+SELECT * FROM rollover_tasks
+WHERE status = 'executing'
+  AND started_at < NOW() - INTERVAL '1 hour';
+```
+
+**手动重置卡住的任务**:
+```sql
+UPDATE rollover_tasks
+SET status = 'pending', started_at = NULL, error_message = '手动重置'
+WHERE status = 'executing'
+  AND started_at < NOW() - INTERVAL '1 hour';
+```
+
+**查看失败的换月任务**:
+```sql
+SELECT * FROM rollover_tasks
+WHERE status = 'failed'
+ORDER BY completed_at DESC;
+```
+
+**检查换月配置**:
+```sql
+SELECT * FROM v_rollover_configs_summary
+WHERE is_enabled = true;
+```
+
+#### G. 相关数据库表
+
+**rollover_configs** - 换月配置
+- account_id, exchange, variety_code
+- rollover_strategy, rollover_threshold
+- days_before_expiry, auto_execute
+- trigger_on_main_switch, rollover_ratio
+
+**rollover_tasks** - 换月任务
+- config_id, account_id
+- old_symbol, new_symbol
+- status: pending/executing/completed/failed
+- rollover_volume, direction
+- error_message, execution_duration_ms
+
+**rollover_executions** - 执行详情(暂未使用)
+- task_id, step_type (close/open)
+- symbol, direction, volume, price
+- commission, polar_order_id
+
+---
+
+### Phase 2: 编写故障排除指南 [PENDING]
+- [ ] 2.1 编写WebSocket连接问题FAQ
+- [ ] 2.2 编写锁仓触发失败FAQ
+- [ ] 2.3 编写换月任务问题FAQ
+- [ ] 2.4 编写天勤行情扩展FAQ
+- [ ] 2.5 编写后端服务问题FAQ
+- [ ] 2.6 编写极星数据推送问题FAQ
+- [ ] 2.7 编写通知服务问题FAQ
+
+### Phase 3: 更新README.md [PENDING]
+- [ ] 3.1 重构FAQ章节结构
+- [ ] 3.2 添加新的FAQ内容
+- [ ] 3.3 添加快速诊断指南
+
+### Phase 4: 验证和完善 [PENDING]
+- [ ] 4.1 验证命令和代码示例
+- [ ] 4.2 检查文档格式和链接
+- [ ] 4.3 更新build-progress.txt
+
+---
+
+## New FAQ Items Planned
+
+### 连接问题
+- WebSocket连接断开重连
+- 天勤行情连接超时
+- 数据库连接池耗尽
+
+### 服务问题
+- 后端服务启动失败
+- 锁仓触发失败
+- 换月任务卡住
+- 通知发送失败
+
+### 数据问题
+- 极星数据推送失败
+- 持仓数据不一致（扩展现有内容）
+- 行情数据延迟
+
+---
+
+## Success Criteria
+1. README.md的FAQ部分从3个问题扩展到至少10个问题
+2. 每个问题包含:问题描述、诊断步骤、解决方案
+3. 添加快速诊断指南帮助用户快速定位问题类型
+4. 所有命令和代码示例经过验证
+
+---
+
+## Notes
+- Implementation plan created: 2024-12-24
+- Estimated effort: 2-3 hours
+- Workflow type: Documentation
