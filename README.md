@@ -232,13 +232,57 @@ WS   /ws/positions            # WebSocket实时推送
 ### 部署运维
 - [部署指南](docs/deployment/DEPLOYMENT.md) - 生产环境部署
 
+### 故障排除
+- [故障排除指南](docs/troubleshooting/) - 常见问题诊断与解决方案
+  - [WebSocket FAQ](docs/troubleshooting/WEBSOCKET_FAQ.md) - 连接问题排查
+  - [天勤行情 FAQ](docs/troubleshooting/TQSDK_FAQ.md) - 行情服务问题
+  - [后端服务 FAQ](docs/troubleshooting/BACKEND_FAQ.md) - 后端API问题
+  - [锁仓触发 FAQ](docs/troubleshooting/LOCK_TRIGGER_FAQ.md) - 锁仓功能问题
+  - [换月任务 FAQ](docs/troubleshooting/ROLLOVER_FAQ.md) - 换月功能问题
+  - [极星数据推送 FAQ](docs/troubleshooting/POLAR_DATA_PUSH_FAQ.md) - 数据推送问题
+  - [通知服务 FAQ](docs/troubleshooting/NOTIFICATION_FAQ.md) - 通知服务问题
+
 ### 开发历史
 - [Phase 2 开发](docs/development/phase2/) - 基础功能开发记录
 - [Phase 3 开发](docs/development/phase3/) - 高级功能开发记录
 
-## 🚨 常见问题
+## 🚨 故障排除指南
 
-### 1. Docker容器启动失败
+本章节提供常见问题的快速诊断和解决方案。详细的故障排除文档请参见 [docs/troubleshooting/](docs/troubleshooting/) 目录。
+
+### 📖 故障排除文档目录
+
+| 分类 | 文档 | 涵盖问题 |
+|------|------|----------|
+| **连接问题** | [WebSocket FAQ](docs/troubleshooting/WEBSOCKET_FAQ.md) | 连接断开、重连失败、JWT错误、订阅不更新 |
+| **行情服务** | [天勤行情 FAQ](docs/troubleshooting/TQSDK_FAQ.md) | 连接失败、数据不更新、合约订阅失败、价格异常 |
+| **后端服务** | [后端服务 FAQ](docs/troubleshooting/BACKEND_FAQ.md) | 启动失败、API错误、数据库连接问题 |
+| **锁仓功能** | [锁仓触发 FAQ](docs/troubleshooting/LOCK_TRIGGER_FAQ.md) | 触发失败、执行失败、条件不满足 |
+| **换月功能** | [换月任务 FAQ](docs/troubleshooting/ROLLOVER_FAQ.md) | 任务卡住、执行失败、提醒未触发 |
+| **数据推送** | [极星数据推送 FAQ](docs/troubleshooting/POLAR_DATA_PUSH_FAQ.md) | 推送失败、持仓不一致、连接失败 |
+| **通知服务** | [通知服务 FAQ](docs/troubleshooting/NOTIFICATION_FAQ.md) | 发送失败、未收到通知、服务超时 |
+
+---
+
+### 🔍 快速诊断流程
+
+遇到问题时,按以下顺序排查:
+
+```
+1. 服务是否运行? → docker-compose ps
+2. 日志有无报错? → docker-compose logs [service]
+3. 环境变量配置? → cat .env | grep [KEY]
+4. 数据库是否正常? → docker exec -it quantfu_postgres psql -U postgres -c "SELECT 1"
+```
+
+---
+
+### 🛠️ 常见问题速查
+
+#### 连接类问题
+
+<details>
+<summary><strong>Docker容器启动失败</strong></summary>
 
 ```bash
 # 查看日志
@@ -253,17 +297,165 @@ docker-compose down
 docker-compose up -d
 ```
 
-### 2. 持仓数据不一致
+📖 详细排查: [后端服务 FAQ](docs/troubleshooting/BACKEND_FAQ.md)
+</details>
 
-- 检查极星策略是否正常推送:`SELECT * FROM trades ORDER BY created_at DESC LIMIT 10;`
-- 手动触发持仓重建:调用后端API `POST /api/positions/rebuild/{account_id}`
-- 查看持仓快照对比:`SELECT * FROM position_snapshots WHERE is_matched = false;`
+<details>
+<summary><strong>WebSocket连接断开/重连失败</strong></summary>
 
-### 3. 天勤行情无数据
+**症状**: 前端实时数据停止更新,控制台显示连接错误
 
-- 检查天勤账号密码:`cat .env | grep TQSDK`
-- 查看后端日志:`docker-compose logs backend`
-- 测试天勤连接:运行 `backend/test_tqsdk.py`
+**快速检查**:
+```bash
+# 检查后端健康状态
+curl http://localhost:8888/health
+
+# 检查Supabase Realtime
+docker-compose logs supabase-realtime
+```
+
+**常见原因**:
+- JWT过期或签名错误
+- 网络不稳定
+- 后端服务重启
+
+📖 详细排查: [WebSocket FAQ](docs/troubleshooting/WEBSOCKET_FAQ.md)
+</details>
+
+<details>
+<summary><strong>天勤行情无数据/连接超时</strong></summary>
+
+**快速检查**:
+```bash
+# 检查天勤账号配置
+cat .env | grep TQSDK
+
+# 查看后端日志
+docker-compose logs backend | grep -i tqsdk
+
+# 测试天勤连接
+cd backend && python test_tqsdk.py
+```
+
+**常见原因**:
+- 账号密码错误
+- 网络无法访问天勤服务器
+- 非交易时段无实时数据
+
+📖 详细排查: [天勤行情 FAQ](docs/troubleshooting/TQSDK_FAQ.md)
+</details>
+
+#### 数据类问题
+
+<details>
+<summary><strong>持仓数据不一致</strong></summary>
+
+**诊断步骤**:
+```bash
+# 1. 检查极星推送的成交记录
+docker exec -it quantfu_postgres psql -U postgres -d postgres -c \
+  "SELECT * FROM trades ORDER BY created_at DESC LIMIT 10;"
+
+# 2. 检查持仓快照对比
+docker exec -it quantfu_postgres psql -U postgres -d postgres -c \
+  "SELECT * FROM position_snapshots WHERE is_matched = false;"
+
+# 3. 手动触发持仓重建
+curl -X POST http://localhost:8888/api/positions/rebuild/{account_id}
+```
+
+📖 详细排查: [极星数据推送 FAQ](docs/troubleshooting/POLAR_DATA_PUSH_FAQ.md)
+</details>
+
+<details>
+<summary><strong>极星数据推送失败</strong></summary>
+
+**快速检查**:
+```bash
+# 测试API连通性
+curl -X POST http://localhost:8888/api/trades \
+  -H "Content-Type: application/json" \
+  -d '{"test": true}'
+
+# 检查账户是否存在
+curl http://localhost:8888/api/accounts
+```
+
+**常见原因**:
+- 后端服务未启动
+- 账户UUID不存在 (404错误)
+- 参数格式错误 (422错误)
+
+📖 详细排查: [极星数据推送 FAQ](docs/troubleshooting/POLAR_DATA_PUSH_FAQ.md)
+</details>
+
+#### 服务类问题
+
+<details>
+<summary><strong>锁仓触发失败</strong></summary>
+
+**快速检查**:
+```bash
+# 查看锁仓配置状态
+docker exec -it quantfu_postgres psql -U postgres -d postgres -c \
+  "SELECT * FROM v_active_lock_configs;"
+
+# 检查锁仓服务日志
+docker-compose logs backend | grep -i lock
+```
+
+**⚠️ 已知限制**: 自动执行功能(auto_execute)尚未实现,当前仅支持触发通知
+
+📖 详细排查: [锁仓触发 FAQ](docs/troubleshooting/LOCK_TRIGGER_FAQ.md)
+</details>
+
+<details>
+<summary><strong>换月任务卡住/执行失败</strong></summary>
+
+**快速检查**:
+```bash
+# 查看换月任务状态
+docker exec -it quantfu_postgres psql -U postgres -d postgres -c \
+  "SELECT * FROM rollover_tasks WHERE status IN ('pending', 'executing');"
+
+# 检查换月监控日志
+docker-compose logs backend | grep -i rollover
+```
+
+**⚠️ 已知限制**: 自动换月执行功能尚未实现,当前仅支持提醒
+
+📖 详细排查: [换月任务 FAQ](docs/troubleshooting/ROLLOVER_FAQ.md)
+</details>
+
+<details>
+<summary><strong>通知未收到</strong></summary>
+
+**快速检查**:
+```bash
+# 检查ntfy配置
+cat .env | grep NTFY
+
+# 测试ntfy发送
+curl -d "测试通知" https://ntfy.sh/your-topic
+```
+
+**常见原因**:
+- NTFY_URL未配置或配置错误
+- 手机客户端未订阅正确的topic
+- 网络无法访问ntfy服务器
+
+📖 详细排查: [通知服务 FAQ](docs/troubleshooting/NOTIFICATION_FAQ.md)
+</details>
+
+---
+
+### 🆘 获取帮助
+
+如果以上方法无法解决问题:
+
+1. **查看完整日志**: `docker-compose logs --tail=100`
+2. **检查GitHub Issues**: [项目Issues页面](https://github.com/allen/quantFu/issues)
+3. **提交新Issue**: 请附上错误日志和复现步骤
 
 ## 📈 后续开发计划
 
