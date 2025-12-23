@@ -11,7 +11,7 @@
       "phase_id": "phase-1",
       "name": "问题场景调研",
       "description": "分析代码库,识别所有可能的故障场景和错误情况",
-      "status": "pending",
+      "status": "completed",
       "subtasks": [
         {
           "subtask_id": "1.1",
@@ -45,18 +45,18 @@
           "title": "分析天勤服务问题",
           "description": "研究tqsdk_service.py和tqsdk_manager.py,识别连接失败、行情订阅失败等问题",
           "estimated_time": "15 min",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
-          "notes": ""
+          "notes": "分析完成。识别了7个常见问题场景:1) 天勤连接失败(账号/密码/网络/服务器);2) 账号未配置;3) 行情数据不更新;4) 合约订阅失败;5) 价格为NaN或0;6) 行情循环崩溃。关键发现:连接方法只返回布尔值无详细错误;行情循环无重连机制;订阅失败无重试;单例连接状态可能过期;环境变量名不一致(TQSDK_USER vs TQSDK_ACCOUNT)。提供了诊断命令和合约映射说明。详细分析记录在build-progress.txt。"
         },
         {
           "subtask_id": "1.5",
           "title": "分析数据库和API问题",
           "description": "研究db.py和main.py中的API接口,识别数据库连接、API调用失败等问题",
           "estimated_time": "15 min",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
-          "notes": ""
+          "notes": "分析完成。识别了数据库连接(utils/db.py)、配置管理(config.py)、API通用问题(main.py)、极星数据推送API、通知服务(notification.py)的常见问题场景。关键发现:1) Supabase客户端无连接池/重试/熔断机制;2) API通用异常处理返回500无详细信息;3) 部分接口无Pydantic验证使用dict;4) notification.py同步阻塞调用;5) 环境变量缺失会导致启动失败无明确提示。详细分析和诊断SQL已记录在build-progress.txt。"
         }
       ]
     },
