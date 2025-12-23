@@ -633,7 +633,7 @@ v_active_lock_configs (视图) = lock_configs + positions (联合查询)
 
 - [WebSocket 问题排查](./WEBSOCKET_FAQ.md)
 - [项目 API 文档](http://localhost:8888/docs) - 后端接口说明
-- [极星策略文档](../polar-strategy-integration.md) - 如需实现下单接口
+- [极星策略集成指南](../integration/POLAR_INTEGRATION.md) - 如需实现下单接口
 
 ---
 
