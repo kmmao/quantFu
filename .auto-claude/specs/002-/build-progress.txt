@@ -693,14 +693,14 @@ NTFY_URL=https://ntfy.sh/your-topic
 
 ---
 
-### Phase 2: 编写故障排除指南 [IN PROGRESS]
+### Phase 2: 编写故障排除指南 [COMPLETED ✅]
 - [x] 2.1 编写WebSocket连接问题FAQ ✅ COMPLETED
 - [x] 2.2 编写锁仓触发失败FAQ ✅ COMPLETED
 - [x] 2.3 编写换月任务问题FAQ ✅ COMPLETED
 - [x] 2.4 编写天勤行情扩展FAQ ✅ COMPLETED
 - [x] 2.5 编写后端服务问题FAQ ✅ COMPLETED
 - [x] 2.6 编写极星数据推送问题FAQ ✅ COMPLETED
-- [ ] 2.7 编写通知服务问题FAQ
+- [x] 2.7 编写通知服务问题FAQ ✅ COMPLETED
 
 ---
 
@@ -833,10 +833,55 @@ NTFY_URL=https://ntfy.sh/your-topic
 - 对账差异分析(diff_long/diff_short解读)
 - 连接测试脚本
 
-### Phase 3: 更新README.md [PENDING]
-- [ ] 3.1 重构FAQ章节结构
-- [ ] 3.2 添加新的FAQ内容
+### 2.7 通知服务问题FAQ (COMPLETED)
+
+**文件位置**: `docs/troubleshooting/NOTIFICATION_FAQ.md`
+
+**覆盖的问题场景**:
+1. 通知发送失败 - 服务器无响应 - 服务器宕机、NTFY_URL配置错误、DNS解析失败
+2. 通知发送失败 - 认证错误 - ntfy服务器启用认证、Topic被保护
+3. 通知发送失败 - 网络超时 - 服务器响应慢、网络延迟、消息体过大
+4. 通知发送成功但手机未收到 - Topic不匹配、客户端权限、优先级过低
+5. 通知内容显示乱码 - UTF-8编码问题、特殊字符处理
+6. 通知发送导致服务卡顿 - 同步requests.post阻塞事件循环
+7. 快速诊断流程 - 配置→网络→手动测试→客户端→日志
+
+**特色内容**:
+- ntfy优先级说明(min/low/default/high/urgent)
+- Tags对照表(warning/rotating_light/check等图标映射)
+- 已知限制说明(同步阻塞、无重试、无认证支持)
+- 最佳实践建议(控制频率、使用适当优先级、保持消息简洁)
+
+### Phase 3: 更新README.md [IN PROGRESS]
+- [x] 3.1 重构FAQ章节结构 ✅ COMPLETED
+- [x] 3.2 添加新的FAQ内容 ✅ COMPLETED
 - [ ] 3.3 添加快速诊断指南
+
+### 3.2 README.md FAQ内容扩展 (COMPLETED)
+
+**新增FAQ条目** (共9个新增,总计17个FAQ):
+
+**连接类问题新增**:
+1. 后端服务启动失败 - 环境变量缺失 (SUPABASE_KEY/DATABASE_URL)
+2. 数据库连接失败 (PostgreSQL/Kong/PostgREST状态检查)
+3. 合约订阅失败/价格显示NaN (合约格式映射表)
+4. 行情数据延迟 (行情循环状态、系统资源检查)
+
+**数据类问题新增**:
+5. API 返回 500 内部错误 (数据库表/视图/RLS诊断)
+6. API 返回 422 参数验证失败 (请求格式示例)
+
+**服务类问题新增**:
+7. 通知发送失败 - 服务器无响应/超时
+8. 锁仓触发条件不满足 (配置检查SQL)
+9. 健康检查异常 (警告解读表)
+
+**特色内容**:
+- 每个FAQ包含: 症状描述、快速检查命令、常见原因、详细文档链接
+- 使用 `<details>` 折叠展示,页面简洁
+- 合约格式对照表 (极星格式↔天勤格式)
+- 警告解读表 (Database/TqSDK/资源警告)
+- 满足成功标准: FAQ从3个扩展到17个 (>10要求)
 
 ### Phase 4: 验证和完善 [PENDING]
 - [ ] 4.1 验证命令和代码示例

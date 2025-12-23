@@ -301,6 +301,56 @@ docker-compose up -d
 </details>
 
 <details>
+<summary><strong>后端服务启动失败 - 环境变量缺失</strong></summary>
+
+**症状**: 后端服务启动后立即退出,日志显示 `ValidationError` 或 `pydantic` 相关错误
+
+**快速检查**:
+```bash
+# 检查容器状态
+docker-compose ps
+
+# 检查必填环境变量
+cat backend/.env | grep -E "(SUPABASE_KEY|DATABASE_URL)"
+
+# 查看启动日志
+docker-compose logs backend --tail=30
+```
+
+**必填环境变量清单**:
+- `SUPABASE_KEY` - Supabase 匿名密钥
+- `DATABASE_URL` - PostgreSQL 连接字符串
+
+📖 详细排查: [后端服务 FAQ](docs/troubleshooting/BACKEND_FAQ.md#1-服务启动失败---环境变量缺失)
+</details>
+
+<details>
+<summary><strong>数据库连接失败</strong></summary>
+
+**症状**: API 返回 500 错误,健康检查显示 `"database": "error"`
+
+**快速检查**:
+```bash
+# 检查 Supabase 服务状态
+docker-compose ps | grep -E "(db|kong|rest)"
+
+# 测试数据库直接连接
+docker exec -it quantfu_postgres psql -U postgres -c "SELECT 1;"
+
+# 检查 PostgREST 连接
+curl -v http://localhost:8000/rest/v1/ \
+  -H "apikey: your-supabase-anon-key"
+```
+
+**常见原因**:
+- PostgreSQL/Kong/PostgREST 容器未运行
+- SUPABASE_URL 配置错误
+- 数据库未初始化
+
+📖 详细排查: [后端服务 FAQ](docs/troubleshooting/BACKEND_FAQ.md#2-服务启动失败---数据库连接失败)
+</details>
+
+<details>
 <summary><strong>WebSocket连接断开/重连失败</strong></summary>
 
 **症状**: 前端实时数据停止更新,控制台显示连接错误
@@ -345,6 +395,65 @@ cd backend && python test_tqsdk.py
 📖 详细排查: [天勤行情 FAQ](docs/troubleshooting/TQSDK_FAQ.md)
 </details>
 
+<details>
+<summary><strong>合约订阅失败/价格显示NaN</strong></summary>
+
+**症状**: 某些合约无行情数据,价格显示为 NaN 或 0
+
+**快速检查**:
+```bash
+# 检查合约格式映射
+curl "http://localhost:8888/api/contracts/convert/polar-to-tqsdk?polar_symbol=ZCE|F|TA|2505"
+
+# 查看订阅失败日志
+docker-compose logs backend | grep "订阅失败"
+
+# 检查合约是否到期
+docker exec -it quantfu_postgres psql -U postgres -d postgres -c \
+  "SELECT * FROM contracts WHERE tqsdk_symbol LIKE '%2412%';"
+```
+
+**常见原因**:
+- 合约格式转换错误(郑商所 ZCE→CZCE)
+- 合约已到期或未上市
+- 非交易时段无成交数据
+
+**合约格式对照**:
+| 极星格式 | 天勤格式 |
+|---------|---------|
+| ZCE\|F\|TA\|2505 | CZCE.TA2505 |
+| SHFE\|F\|RB\|2505 | SHFE.rb2505 |
+| DCE\|Z\|V\|2505 | DCE.v2505 |
+
+📖 详细排查: [天勤行情 FAQ](docs/troubleshooting/TQSDK_FAQ.md#4-合约订阅失败)
+</details>
+
+<details>
+<summary><strong>行情数据延迟</strong></summary>
+
+**症状**: 价格更新明显滞后,持仓浮盈不实时
+
+**快速检查**:
+```bash
+# 检查行情循环是否正常
+docker-compose logs backend --tail=20 | grep "行情"
+
+# 测试行情接口响应时间
+time curl http://localhost:8888/api/kline/CZCE.TA2505
+
+# 检查系统资源
+docker stats
+```
+
+**常见原因**:
+- 行情循环阻塞或崩溃
+- 网络延迟过高
+- 数据库写入延迟
+- 系统资源不足
+
+📖 详细排查: [天勤行情 FAQ](docs/troubleshooting/TQSDK_FAQ.md#8-行情数据延迟)
+</details>
+
 #### 数据类问题
 
 <details>
@@ -387,6 +496,68 @@ curl http://localhost:8888/api/accounts
 - 参数格式错误 (422错误)
 
 📖 详细排查: [极星数据推送 FAQ](docs/troubleshooting/POLAR_DATA_PUSH_FAQ.md)
+</details>
+
+<details>
+<summary><strong>API 返回 500 内部错误</strong></summary>
+
+**症状**: API 调用返回 HTTP 500 Internal Server Error
+
+**快速检查**:
+```bash
+# 查看完整错误日志
+docker-compose logs backend --tail=100 | grep -E "(ERROR|Exception|Traceback)"
+
+# 检查数据库表是否存在
+docker exec -it quantfu_postgres psql -U postgres -d postgres -c "\dt"
+
+# 检查视图是否正常
+docker exec -it quantfu_postgres psql -U postgres -d postgres -c \
+  "SELECT COUNT(*) FROM v_positions_summary;"
+```
+
+**常见错误及原因**:
+| 错误信息 | 原因 |
+|---------|------|
+| `relation "xxx" does not exist` | 表/视图不存在,需运行迁移 |
+| `permission denied` | RLS 策略限制 |
+| `NoneType has no attribute` | 空值访问,检查前置数据 |
+
+📖 详细排查: [后端服务 FAQ](docs/troubleshooting/BACKEND_FAQ.md#3-api-返回-500-错误)
+</details>
+
+<details>
+<summary><strong>API 返回 422 参数验证失败</strong></summary>
+
+**症状**: POST/PUT 请求返回 HTTP 422 Unprocessable Entity
+
+**快速检查**:
+```bash
+# 查看API文档了解参数要求
+# 访问 http://localhost:8888/docs
+
+# 测试成交推送格式
+curl -X POST http://localhost:8888/api/trades \
+  -H "Content-Type: application/json" \
+  -d '{
+    "account_id": "85178443",
+    "symbol": "TA2505",
+    "direction": "long",
+    "offset": "open",
+    "volume": 1,
+    "price": 5500.0,
+    "order_id": "ORDER123",
+    "timestamp": "2024-12-24T10:00:00",
+    "source": "polar"
+  }'
+```
+
+**常见原因**:
+- 缺少必填字段
+- 字段类型不匹配(如字符串传了数字)
+- 枚举值错误(direction 只接受 "long"/"short")
+
+📖 详细排查: [后端服务 FAQ](docs/troubleshooting/BACKEND_FAQ.md#5-api-返回-422---参数验证失败)
 </details>
 
 #### 服务类问题
@@ -445,6 +616,90 @@ curl -d "测试通知" https://ntfy.sh/your-topic
 - 网络无法访问ntfy服务器
 
 📖 详细排查: [通知服务 FAQ](docs/troubleshooting/NOTIFICATION_FAQ.md)
+</details>
+
+<details>
+<summary><strong>通知发送失败 - 服务器无响应/超时</strong></summary>
+
+**症状**: 后端日志显示 `[通知] 发送异常: Connection refused` 或 `Read timed out`
+
+**快速检查**:
+```bash
+# 检查 NTFY_URL 配置
+cat backend/.env | grep NTFY_URL
+
+# 在后端容器内测试连通性
+docker-compose exec backend curl -v https://ntfy.zmddg.com/test
+
+# 手动发送测试通知
+curl -X POST https://ntfy.zmddg.com/YOUR-TOPIC \
+  -H "Title: 测试" \
+  -H "Priority: high" \
+  -d "测试消息 $(date)"
+```
+
+**解决方案**:
+- 如果自建服务器不可用,临时切换到官方服务: `NTFY_URL=https://ntfy.sh/quantfu-alerts-RANDOM`
+- 检查网络出站规则是否允许访问外部服务
+
+📖 详细排查: [通知服务 FAQ](docs/troubleshooting/NOTIFICATION_FAQ.md#1-通知发送失败---服务器无响应)
+</details>
+
+<details>
+<summary><strong>锁仓触发条件不满足</strong></summary>
+
+**症状**: 持仓有利润但锁仓未触发
+
+**快速检查**:
+```bash
+# 检查锁仓配置
+docker exec -it quantfu_postgres psql -U postgres -d postgres -c \
+  "SELECT id, position_id, trigger_type, trigger_price, profit_threshold,
+          is_enabled, auto_execute
+   FROM lock_configs WHERE is_enabled = true;"
+
+# 检查当前持仓利润
+docker exec -it quantfu_postgres psql -U postgres -d postgres -c \
+  "SELECT * FROM v_active_lock_configs;"
+```
+
+**常见原因**:
+- 利润阈值设置过高
+- 方向不匹配(多头配置对空头持仓)
+- `is_enabled` 为 false
+- 锁仓触发服务未运行
+
+📖 详细排查: [锁仓触发 FAQ](docs/troubleshooting/LOCK_TRIGGER_FAQ.md#2-触发条件不满足)
+</details>
+
+<details>
+<summary><strong>健康检查异常</strong></summary>
+
+**症状**: `/health` 返回 `"status": "unhealthy"` 或有警告信息
+
+**快速检查**:
+```bash
+# 基础健康检查
+curl http://localhost:8888/health | jq
+
+# 详细健康检查
+curl http://localhost:8888/health/detailed | jq
+
+# 查看各组件状态
+curl http://localhost:8888/health/detailed | jq '.components'
+
+# 查看警告列表
+curl http://localhost:8888/health/detailed | jq '.warnings'
+```
+
+**常见警告解读**:
+| 警告信息 | 原因 | 解决方案 |
+|---------|------|---------|
+| Database connection failed | 数据库不可用 | 检查 PostgreSQL 服务 |
+| TqSDK not configured | 天勤未配置 | 可忽略或配置 TQSDK 环境变量 |
+| High CPU/memory usage | 资源不足 | 检查容器资源限制 |
+
+📖 详细排查: [后端服务 FAQ](docs/troubleshooting/BACKEND_FAQ.md#7-健康检查接口异常)
 </details>
 
 ---

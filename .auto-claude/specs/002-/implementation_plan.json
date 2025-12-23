@@ -64,7 +64,7 @@
       "phase_id": "phase-2",
       "name": "编写故障排除指南",
       "description": "为每个识别的问题场景编写详细的诊断步骤和解决方案",
-      "status": "in_progress",
+      "status": "completed",
       "subtasks": [
         {
           "subtask_id": "2.1",
@@ -135,25 +135,25 @@
       "phase_id": "phase-3",
       "name": "更新README.md",
       "description": "将编写的FAQ内容整合到README.md中",
-      "status": "pending",
+      "status": "in_progress",
       "subtasks": [
         {
           "subtask_id": "3.1",
           "title": "重构FAQ章节结构",
           "description": "将现有3个FAQ扩展为分类的故障排除指南,增加清晰的分类和目录",
           "estimated_time": "15 min",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["2.1", "2.2", "2.3", "2.4", "2.5", "2.6", "2.7"],
-          "notes": ""
+          "notes": "完成README.md FAQ章节重构:1) 将'常见问题'重命名为'故障排除指南';2) 添加故障排除文档目录表格(7个分类文档);3) 添加快速诊断流程(4步骤检查清单);4) 按类别组织常见问题(连接类/数据类/服务类);5) 每个问题使用details折叠展示,提供快速检查命令和详细文档链接;6) 在文档索引中添加故障排除分类;7) 创建docs/troubleshooting/README.md索引文件。"
         },
         {
           "subtask_id": "3.2",
           "title": "添加新的FAQ内容",
           "description": "将所有新编写的FAQ内容添加到README.md的常见问题章节",
           "estimated_time": "20 min",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["3.1"],
-          "notes": ""
+          "notes": "完成README.md FAQ内容扩展。新增FAQ条目: 1) 后端服务启动失败-环境变量缺失 2) 数据库连接失败 3) 合约订阅失败/价格显示NaN 4) 行情数据延迟 5) API返回500内部错误 6) API返回422参数验证失败 7) 通知发送失败-服务器无响应/超时 8) 锁仓触发条件不满足 9) 健康检查异常。README.md现共有17个FAQ条目,超过10+要求。每个FAQ包含症状描述、快速检查命令、常见原因和详细文档链接。"
         },
         {
           "subtask_id": "3.3",
