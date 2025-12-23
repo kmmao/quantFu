@@ -852,10 +852,10 @@ NTFY_URL=https://ntfy.sh/your-topic
 - 已知限制说明(同步阻塞、无重试、无认证支持)
 - 最佳实践建议(控制频率、使用适当优先级、保持消息简洁)
 
-### Phase 3: 更新README.md [IN PROGRESS]
+### Phase 3: 更新README.md [COMPLETED ✅]
 - [x] 3.1 重构FAQ章节结构 ✅ COMPLETED
 - [x] 3.2 添加新的FAQ内容 ✅ COMPLETED
-- [ ] 3.3 添加快速诊断指南
+- [x] 3.3 添加快速诊断指南 ✅ COMPLETED
 
 ### 3.2 README.md FAQ内容扩展 (COMPLETED)
 
@@ -883,10 +883,102 @@ NTFY_URL=https://ntfy.sh/your-topic
 - 警告解读表 (Database/TqSDK/资源警告)
 - 满足成功标准: FAQ从3个扩展到17个 (>10要求)
 
-### Phase 4: 验证和完善 [PENDING]
-- [ ] 4.1 验证命令和代码示例
+### 3.3 添加快速诊断指南 (COMPLETED)
+
+**README.md 新增内容**:
+
+1. **一分钟问题定位检查清单**
+   - 5步快速排查表格(步骤→检查项→命令→正常结果→异常处理)
+   - 涵盖:服务状态、健康检查、数据库连接、环境变量、日志检查
+
+2. **问题诊断决策树 (Text-based Flowchart)**
+   - 覆盖4大问题类别:
+     - 服务无法启动(后端/数据库/前端)
+     - 数据不更新/不显示(全部/行情/持仓/实时推送)
+     - API返回错误(500/404/422/超时)
+     - 功能异常(锁仓/换月/通知)
+     - 价格/数据异常(NaN/对账不一致/浮盈错误)
+   - 每个分支提供具体的诊断命令
+
+3. **快速诊断命令大全** (可折叠展示)
+   - 服务状态检查命令
+   - 日志查看命令
+   - 数据库诊断命令
+   - 网络和连接测试命令
+   - 资源监控命令
+
+4. **按问题类型快速跳转表格**
+   - 7种常见问题类型
+   - 每种提供快速检查命令和详细文档链接
+
+**docs/troubleshooting/README.md 新增内容**:
+
+1. **30秒快速诊断**
+   - 3条基础诊断命令(服务状态/健康检查/错误日志)
+   - 根据结果的下一步指引
+
+2. **问题诊断检查清单**
+   - 基础检查(必做):4项核心检查
+   - 分类检查清单(可折叠):
+     - 连接问题检查清单(6项)
+     - 数据问题检查清单(5项)
+     - 行情问题检查清单(5项)
+     - 功能问题检查清单(锁仓4项/换月4项/通知3项)
+
+3. **诊断决策树**
+   - 症状导向的问题定位流程图
+   - 5大问题类别,每类3-4个具体症状及解决路径
+
+### Phase 4: 验证和完善 [IN PROGRESS]
+- [x] 4.1 验证命令和代码示例 ✅ COMPLETED
 - [ ] 4.2 检查文档格式和链接
 - [ ] 4.3 更新build-progress.txt
+
+### 4.1 验证命令和代码示例 (COMPLETED)
+
+**验证内容:**
+
+1. **API端点验证** - 对照 `backend/main.py` 验证所有文档中引用的API端点:
+   - `/health` ✓
+   - `/health/detailed` ✓
+   - `/api/trades` POST ✓
+   - `/api/position_snapshots` POST ✓
+   - `/api/positions/{account_polar_id}` GET ✓
+   - `/api/contracts` GET ✓
+   - `/api/contracts/convert/polar-to-tqsdk` GET ✓
+   - `/api/lock/configs` GET/POST ✓
+   - `/api/rollover/configs` GET/POST ✓
+
+2. **配置结构验证** - 对照 `backend/config.py` 验证文档中的配置说明:
+   - `supabase_url` (默认值) ✓
+   - `supabase_key` (必填) ✓
+   - `database_url` (必填) ✓
+   - `tqsdk_account` (可选) ✓
+   - `tqsdk_password` (可选) ✓
+   - `ntfy_url` (默认值) ✓
+
+3. **测试脚本验证** - 确认文档引用的测试脚本存在:
+   - `test_tqsdk.py` ✓
+   - `test_tqsdk_auth.py` ✓
+   - `test_tqsdk_market.py` ✓
+
+4. **notification.py验证** - 确认文档描述与实际代码一致:
+   - 使用同步 `requests.post` ✓
+   - 5秒超时 ✓
+   - 使用 `os.getenv()` ✓
+
+5. **Docker命令验证** - bash命令语法正确:
+   - `docker-compose ps` ✓
+   - `docker-compose logs [service]` ✓
+   - `docker exec -it quantfu_postgres psql` ✓
+   - `curl` 命令格式 ✓
+
+6. **SQL查询验证** - SQL语法正确,可直接复制执行
+
+**修复内容:**
+- 更新所有FAQ文档的"最后更新"日期从 2024-12-24 → 2025-12-24
+
+**结论:** 所有命令和代码示例验证通过
 
 ---
 

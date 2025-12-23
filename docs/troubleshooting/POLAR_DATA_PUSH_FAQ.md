@@ -973,4 +973,4 @@ docker-compose logs backend --tail=50 | grep -E "(ERROR|Exception|404|500)"
 
 ---
 
-*最后更新: 2024-12-24*
+*最后更新: 2025-12-24*

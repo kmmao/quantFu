@@ -135,7 +135,7 @@
       "phase_id": "phase-3",
       "name": "更新README.md",
       "description": "将编写的FAQ内容整合到README.md中",
-      "status": "in_progress",
+      "status": "completed",
       "subtasks": [
         {
           "subtask_id": "3.1",
@@ -160,9 +160,9 @@
           "title": "添加快速诊断指南",
           "description": "添加一个快速诊断流程图或检查清单,帮助用户快速定位问题",
           "estimated_time": "15 min",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["3.2"],
-          "notes": ""
+          "notes": "添加了完整的快速诊断指南到 README.md 和 docs/troubleshooting/README.md: 1) README.md 新增一分钟问题定位检查清单(5步快速排查表格)、问题诊断决策树(text-based flowchart覆盖4大问题类别)、快速诊断命令大全(可折叠展示)、按问题类型快速跳转表格; 2) docs/troubleshooting/README.md 新增30秒快速诊断命令、问题诊断检查清单(基础+分类)、诊断决策树。"
         }
       ]
     },
@@ -177,9 +177,9 @@
           "title": "验证命令和代码示例",
           "description": "确保所有命令和代码示例可以正确执行",
           "estimated_time": "15 min",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["3.3"],
-          "notes": ""
+          "notes": "Verified all commands and code examples in troubleshooting documentation. Confirmed: API endpoints match main.py, config structure matches config.py, test scripts exist, notification.py behavior documented correctly. Fixed all FAQ document dates from 2024-12-24 to 2025-12-24."
         },
         {
           "subtask_id": "4.2",
