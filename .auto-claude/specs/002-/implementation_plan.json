@@ -107,9 +107,9 @@
           "title": "编写后端服务问题FAQ",
           "description": "编写后端服务启动失败、API报错的诊断和解决方案",
           "estimated_time": "15 min",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["1.5"],
-          "notes": ""
+          "notes": "创建了 docs/troubleshooting/BACKEND_FAQ.md,包含8个问题场景的完整诊断和解决方案:服务启动失败(环境变量缺失)、服务启动失败(数据库连接失败)、API返回500错误、API返回404账户不存在、API返回422参数验证失败、API响应缓慢或超时、健康检查接口异常,以及快速诊断流程。覆盖环境配置检查、数据库连接诊断、常用API端点说明、环境变量清单和最佳实践建议。"
         },
         {
           "subtask_id": "2.6",
