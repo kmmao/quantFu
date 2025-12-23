@@ -266,14 +266,170 @@ WS   /ws/positions            # WebSocket实时推送
 
 ### 🔍 快速诊断流程
 
-遇到问题时,按以下顺序排查:
+#### 📋 一分钟问题定位检查清单
+
+遇到问题时,**按顺序执行以下检查**,快速定位问题范围:
+
+| 步骤 | 检查项 | 命令 | 正常结果 | 异常处理 |
+|:---:|--------|------|----------|----------|
+| ①  | **服务状态** | `docker-compose ps` | 所有服务 `Up` | → [启动问题](#连接类问题) |
+| ②  | **健康检查** | `curl localhost:8888/health` | `{"status":"healthy"}` | → [后端服务 FAQ](docs/troubleshooting/BACKEND_FAQ.md) |
+| ③  | **数据库连接** | `docker exec -it quantfu_postgres psql -U postgres -c "SELECT 1"` | 返回 `1` | → [数据库问题](#数据库连接失败) |
+| ④  | **环境变量** | `cat .env \| grep -E "(SUPABASE\|TQSDK)"` | 变量已设置 | → 检查 `.env` 配置 |
+| ⑤  | **最近日志** | `docker-compose logs --tail=30` | 无 ERROR | → 查看具体错误 |
+
+---
+
+#### 🔀 问题诊断决策树
+
+根据你遇到的**主要症状**,按照下方流程快速定位问题:
 
 ```
-1. 服务是否运行? → docker-compose ps
-2. 日志有无报错? → docker-compose logs [service]
-3. 环境变量配置? → cat .env | grep [KEY]
-4. 数据库是否正常? → docker exec -it quantfu_postgres psql -U postgres -c "SELECT 1"
+你遇到了什么问题?
+│
+├─► 服务无法启动
+│   ├─► 后端启动失败 → 检查环境变量(SUPABASE_KEY/DATABASE_URL)
+│   │   └─► docker-compose logs backend --tail=50
+│   ├─► 数据库启动失败 → 检查端口占用/磁盘空间
+│   │   └─► lsof -i :5432 && docker-compose logs postgres
+│   └─► 前端启动失败 → 检查 Node 依赖
+│       └─► cd frontend && npm install
+│
+├─► 数据不更新/不显示
+│   ├─► 所有数据都不更新 → 检查数据库/后端连接
+│   │   └─► curl localhost:8888/health
+│   ├─► 只有行情不更新 → 检查天勤服务
+│   │   └─► docker-compose logs backend | grep -i tqsdk
+│   ├─► 只有持仓不更新 → 检查极星推送
+│   │   └─► 查看最近 trades 记录
+│   └─► 实时推送不工作 → 检查 WebSocket/Realtime
+│       └─► 查看浏览器控制台 + Supabase Realtime 日志
+│
+├─► API 返回错误
+│   ├─► 500 内部错误 → 查看后端日志找具体异常
+│   │   └─► docker-compose logs backend | grep -E "(ERROR|Exception)"
+│   ├─► 404 未找到 → 检查资源是否存在(账户/合约)
+│   │   └─► 检查 accounts/contracts 表
+│   ├─► 422 验证失败 → 检查请求参数格式
+│   │   └─► 参考 API 文档: localhost:8888/docs
+│   └─► 连接超时 → 检查服务是否运行/网络
+│       └─► docker-compose ps && ping localhost
+│
+├─► 功能异常
+│   ├─► 锁仓未触发 → 检查配置和触发条件
+│   │   └─► SELECT * FROM v_active_lock_configs;
+│   ├─► 换月未提醒 → 检查换月配置和监控服务
+│   │   └─► SELECT * FROM rollover_configs WHERE is_enabled;
+│   └─► 通知未收到 → 检查 NTFY 配置和网络
+│       └─► curl -d "test" $NTFY_URL
+│
+└─► 价格/数据异常
+    ├─► 价格显示 NaN/0 → 非交易时段或合约错误
+    │   └─► 检查合约格式映射
+    ├─► 持仓对账不一致 → trades 记录不完整
+    │   └─► SELECT * FROM position_snapshots WHERE is_matched=false;
+    └─► 浮盈计算错误 → 行情价格未更新
+        └─► 检查 positions 表 last_price 字段
 ```
+
+---
+
+#### ⚡ 快速诊断命令大全
+
+<details>
+<summary><strong>展开查看所有诊断命令</strong></summary>
+
+**服务状态检查**
+```bash
+# 查看所有容器状态
+docker-compose ps
+
+# 快速健康检查
+curl -s localhost:8888/health | jq
+
+# 详细健康检查
+curl -s localhost:8888/health/detailed | jq '.components'
+```
+
+**日志查看**
+```bash
+# 查看所有服务最近日志
+docker-compose logs --tail=50
+
+# 查看后端错误日志
+docker-compose logs backend 2>&1 | grep -E "(ERROR|Exception|Traceback)"
+
+# 查看天勤相关日志
+docker-compose logs backend | grep -i tqsdk
+
+# 实时跟踪日志
+docker-compose logs -f backend
+```
+
+**数据库诊断**
+```bash
+# 测试数据库连接
+docker exec -it quantfu_postgres psql -U postgres -c "SELECT 1"
+
+# 查看最近成交
+docker exec -it quantfu_postgres psql -U postgres -d postgres -c \
+  "SELECT symbol, direction, volume, price, created_at FROM trades ORDER BY created_at DESC LIMIT 5;"
+
+# 查看持仓汇总
+docker exec -it quantfu_postgres psql -U postgres -d postgres -c \
+  "SELECT * FROM v_positions_summary;"
+
+# 检查锁仓配置
+docker exec -it quantfu_postgres psql -U postgres -d postgres -c \
+  "SELECT id, position_id, trigger_type, profit_threshold, is_enabled FROM lock_configs;"
+
+# 检查换月任务
+docker exec -it quantfu_postgres psql -U postgres -d postgres -c \
+  "SELECT id, old_symbol, new_symbol, status, error_message FROM rollover_tasks ORDER BY created_at DESC LIMIT 5;"
+```
+
+**网络和连接测试**
+```bash
+# 测试 API 端点
+curl -s localhost:8888/api/accounts | jq
+
+# 测试天勤连接
+cd backend && python test_tqsdk.py
+
+# 测试 ntfy 通知
+curl -d "QuantFu 测试通知" $(grep NTFY_URL .env | cut -d= -f2)
+
+# 检查端口占用
+lsof -i :8888 -i :5432 -i :3000 -i :3001
+```
+
+**资源监控**
+```bash
+# 查看容器资源使用
+docker stats --no-stream
+
+# 查看磁盘使用
+docker system df
+
+# 清理未使用资源
+docker system prune -f
+```
+
+</details>
+
+---
+
+#### 🎯 按问题类型快速跳转
+
+| 我遇到的问题是... | 快速检查 | 详细文档 |
+|------------------|----------|----------|
+| **无法启动服务** | `docker-compose logs [service]` | [后端服务 FAQ](docs/troubleshooting/BACKEND_FAQ.md) |
+| **前端数据不实时** | 检查浏览器控制台 WebSocket 错误 | [WebSocket FAQ](docs/troubleshooting/WEBSOCKET_FAQ.md) |
+| **行情价格不更新** | `grep -i tqsdk` 后端日志 | [天勤行情 FAQ](docs/troubleshooting/TQSDK_FAQ.md) |
+| **极星推送失败** | 检查 accounts 表有无对应账户 | [极星数据推送 FAQ](docs/troubleshooting/POLAR_DATA_PUSH_FAQ.md) |
+| **锁仓不触发** | `SELECT * FROM v_active_lock_configs` | [锁仓触发 FAQ](docs/troubleshooting/LOCK_TRIGGER_FAQ.md) |
+| **换月不提醒** | `SELECT * FROM rollover_configs` | [换月任务 FAQ](docs/troubleshooting/ROLLOVER_FAQ.md) |
+| **通知收不到** | `curl -d "test" $NTFY_URL` | [通知服务 FAQ](docs/troubleshooting/NOTIFICATION_FAQ.md) |
 
 ---
 
