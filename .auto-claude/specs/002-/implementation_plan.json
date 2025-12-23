@@ -80,9 +80,9 @@
           "title": "编写锁仓触发失败FAQ",
           "description": "编写锁仓触发失败、执行失败的诊断和解决方案,包括配置检查和日志排查",
           "estimated_time": "20 min",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["1.2"],
-          "notes": ""
+          "notes": "创建了 docs/troubleshooting/LOCK_TRIGGER_FAQ.md,包含7个问题场景的完整诊断和解决方案:锁仓自动执行失败(NotImplementedError)、触发条件不满足(配置检查)、移动止损不触发(功能未实现)、持仓不足错误、触发服务停止(主循环异常)、通知未收到,以及快速诊断流程。覆盖配置检查、日志排查和数据库诊断SQL查询。"
         },
         {
           "subtask_id": "2.3",
