@@ -1,0 +1,250 @@
+{
+  "feature": "添加常见问题与故障排除指南",
+  "description": "README.md只有3个常见问题（Docker启动失败、持仓数据不一致、天勤行情无数据），缺少更多实际使用中常见的问题场景，如WebSocket连接断开重连、锁仓触发失败、换月任务卡住等。",
+  "created_at": "2025-12-23T18:36:47.419Z",
+  "updated_at": "2025-12-24T02:45:00.000Z",
+  "status": "in_progress",
+  "planStatus": "approved",
+  "estimated_effort": "2-3 hours",
+  "phases": [
+    {
+      "phase_id": "phase-1",
+      "name": "问题场景调研",
+      "description": "分析代码库,识别所有可能的故障场景和错误情况",
+      "status": "completed",
+      "subtasks": [
+        {
+          "subtask_id": "1.1",
+          "title": "分析WebSocket连接相关问题",
+          "description": "研究main.py中的WebSocket实现,识别断开重连、连接超时等常见问题场景",
+          "estimated_time": "15 min",
+          "status": "completed",
+          "dependencies": [],
+          "notes": "分析完成。识别了6个常见问题场景:WebSocket连接断开、连接超时、重连失败、订阅失败、内存泄漏、认证失败。发现后端WebSocket实现基础(无心跳/超时/认证),前端Supabase Realtime有已知JWT签名问题。详细发现记录在build-progress.txt。"
+        },
+        {
+          "subtask_id": "1.2",
+          "title": "分析锁仓触发服务问题",
+          "description": "研究lock_trigger_service.py和lock_engine.py,识别锁仓触发失败、执行失败等问题",
+          "estimated_time": "15 min",
+          "status": "completed",
+          "dependencies": [],
+          "notes": "分析完成。识别了6个常见问题场景:锁仓自动执行失败、触发条件不满足、移动止损不触发、持仓不足错误、触发服务停止、通知未收到。关键发现:1) _execute_lock_order方法未实现(抛出NotImplementedError),导致所有自动执行失败;2) trailing触发类型未实现;3) 服务主循环异常会导致服务完全停止。详细分析记录在build-progress.txt。"
+        },
+        {
+          "subtask_id": "1.3",
+          "title": "分析换月服务问题",
+          "description": "研究rollover_service.py和rollover_monitor.py,识别换月任务卡住、执行失败等问题",
+          "estimated_time": "15 min",
+          "status": "completed",
+          "dependencies": [],
+          "notes": "分析完成。识别了8个常见问题:1) _close_old_position和_open_new_position均未实现(抛出NotImplementedError),所有自动换月执行失败;2) 任务可能永久卡在executing状态无恢复机制;3) 监控循环静默失败;4) 行情数据和到期日查询静默失败难以诊断;5) 无重复任务检测;6) 通知发送同步阻塞。提供了诊断SQL和数据库表结构说明。详细分析记录在build-progress.txt。"
+        },
+        {
+          "subtask_id": "1.4",
+          "title": "分析天勤服务问题",
+          "description": "研究tqsdk_service.py和tqsdk_manager.py,识别连接失败、行情订阅失败等问题",
+          "estimated_time": "15 min",
+          "status": "completed",
+          "dependencies": [],
+          "notes": "分析完成。识别了7个常见问题场景:1) 天勤连接失败(账号/密码/网络/服务器);2) 账号未配置;3) 行情数据不更新;4) 合约订阅失败;5) 价格为NaN或0;6) 行情循环崩溃。关键发现:连接方法只返回布尔值无详细错误;行情循环无重连机制;订阅失败无重试;单例连接状态可能过期;环境变量名不一致(TQSDK_USER vs TQSDK_ACCOUNT)。提供了诊断命令和合约映射说明。详细分析记录在build-progress.txt。"
+        },
+        {
+          "subtask_id": "1.5",
+          "title": "分析数据库和API问题",
+          "description": "研究db.py和main.py中的API接口,识别数据库连接、API调用失败等问题",
+          "estimated_time": "15 min",
+          "status": "completed",
+          "dependencies": [],
+          "notes": "分析完成。识别了数据库连接(utils/db.py)、配置管理(config.py)、API通用问题(main.py)、极星数据推送API、通知服务(notification.py)的常见问题场景。关键发现:1) Supabase客户端无连接池/重试/熔断机制;2) API通用异常处理返回500无详细信息;3) 部分接口无Pydantic验证使用dict;4) notification.py同步阻塞调用;5) 环境变量缺失会导致启动失败无明确提示。详细分析和诊断SQL已记录在build-progress.txt。"
+        }
+      ]
+    },
+    {
+      "phase_id": "phase-2",
+      "name": "编写故障排除指南",
+      "description": "为每个识别的问题场景编写详细的诊断步骤和解决方案",
+      "status": "completed",
+      "subtasks": [
+        {
+          "subtask_id": "2.1",
+          "title": "编写WebSocket连接问题FAQ",
+          "description": "编写WebSocket连接断开重连、连接超时的诊断和解决方案,包括前端和后端排查步骤",
+          "estimated_time": "20 min",
+          "status": "completed",
+          "dependencies": ["1.1"],
+          "notes": "创建了 docs/troubleshooting/WEBSOCKET_FAQ.md,包含7个问题场景的完整诊断和解决方案:WebSocket连接断开、连接超时、重连失败、订阅数据不更新、JWT签名错误、内存泄漏,以及快速诊断流程。覆盖前端Supabase Realtime和后端FastAPI WebSocket两个层面的排查步骤。"
+        },
+        {
+          "subtask_id": "2.2",
+          "title": "编写锁仓触发失败FAQ",
+          "description": "编写锁仓触发失败、执行失败的诊断和解决方案,包括配置检查和日志排查",
+          "estimated_time": "20 min",
+          "status": "completed",
+          "dependencies": ["1.2"],
+          "notes": "创建了 docs/troubleshooting/LOCK_TRIGGER_FAQ.md,包含7个问题场景的完整诊断和解决方案:锁仓自动执行失败(NotImplementedError)、触发条件不满足(配置检查)、移动止损不触发(功能未实现)、持仓不足错误、触发服务停止(主循环异常)、通知未收到,以及快速诊断流程。覆盖配置检查、日志排查和数据库诊断SQL查询。"
+        },
+        {
+          "subtask_id": "2.3",
+          "title": "编写换月任务问题FAQ",
+          "description": "编写换月任务卡住、执行失败的诊断和解决方案,包括任务状态检查和手动恢复",
+          "estimated_time": "20 min",
+          "status": "completed",
+          "dependencies": ["1.3"],
+          "notes": "创建了 docs/troubleshooting/ROLLOVER_FAQ.md,包含8个问题场景的完整诊断和解决方案:换月任务执行失败(NotImplementedError)、换月任务卡住(执行超时无恢复机制)、换月提醒未触发(配置/阈值/持仓检查)、行情数据不足错误(静默失败诊断)、重复换月任务(无去重检查)、换月监控服务停止(主循环异常)、换月通知未收到,以及快速诊断流程。覆盖任务状态检查、手动恢复SQL、数据库表关系和最佳实践建议。"
+        },
+        {
+          "subtask_id": "2.4",
+          "title": "编写天勤行情扩展FAQ",
+          "description": "扩展现有的天勤行情问题,添加更多场景如连接超时、行情延迟等",
+          "estimated_time": "15 min",
+          "status": "completed",
+          "dependencies": ["1.4"],
+          "notes": "创建了 docs/troubleshooting/TQSDK_FAQ.md,包含9个问题场景的完整诊断和解决方案:天勤连接失败、账号未配置、行情数据不更新、合约订阅失败、价格显示NaN或0、行情服务崩溃、连接超时、行情数据延迟,以及快速诊断流程。覆盖环境配置检查、网络诊断、合约格式映射表(极星↔天勤)、交易时段说明、Docker命令和SQL诊断查询。"
+        },
+        {
+          "subtask_id": "2.5",
+          "title": "编写后端服务问题FAQ",
+          "description": "编写后端服务启动失败、API报错的诊断和解决方案",
+          "estimated_time": "15 min",
+          "status": "completed",
+          "dependencies": ["1.5"],
+          "notes": "创建了 docs/troubleshooting/BACKEND_FAQ.md,包含8个问题场景的完整诊断和解决方案:服务启动失败(环境变量缺失)、服务启动失败(数据库连接失败)、API返回500错误、API返回404账户不存在、API返回422参数验证失败、API响应缓慢或超时、健康检查接口异常,以及快速诊断流程。覆盖环境配置检查、数据库连接诊断、常用API端点说明、环境变量清单和最佳实践建议。"
+        },
+        {
+          "subtask_id": "2.6",
+          "title": "编写极星数据推送问题FAQ",
+          "description": "编写极星策略数据推送失败的诊断和解决方案",
+          "estimated_time": "15 min",
+          "status": "completed",
+          "dependencies": ["1.5"],
+          "notes": "创建了 docs/troubleshooting/POLAR_DATA_PUSH_FAQ.md,包含8个问题场景的完整诊断和解决方案:成交数据推送失败(账户不存在404)、成交数据推送失败(数据库写入500)、成交数据推送失败(参数验证422)、持仓对账不一致(计算差异分析)、极星策略无法连接后端(网络/端口/配置)、数据推送成功但前端不显示(Realtime/缓存问题)、持仓重建失败(position_engine问题),以及快速诊断流程。覆盖TradeEvent和PositionSnapshot字段说明、API端点清单、问题定位表、推送重试最佳实践。"
+        },
+        {
+          "subtask_id": "2.7",
+          "title": "编写通知服务问题FAQ",
+          "description": "编写ntfy通知发送失败的诊断和解决方案",
+          "estimated_time": "10 min",
+          "status": "completed",
+          "dependencies": ["1.5"],
+          "notes": "创建了 docs/troubleshooting/NOTIFICATION_FAQ.md,包含7个问题场景的完整诊断和解决方案:通知发送失败-服务器无响应、通知发送失败-认证错误、通知发送失败-网络超时、通知发送成功但手机未收到、通知内容显示乱码、通知发送导致服务卡顿,以及快速诊断流程。覆盖NTFY_URL配置检查、网络连通性测试、手机客户端排查、优先级说明、Tags对照表、已知限制(同步阻塞、无重试、无认证支持)和最佳实践建议。"
+        }
+      ]
+    },
+    {
+      "phase_id": "phase-3",
+      "name": "更新README.md",
+      "description": "将编写的FAQ内容整合到README.md中",
+      "status": "completed",
+      "subtasks": [
+        {
+          "subtask_id": "3.1",
+          "title": "重构FAQ章节结构",
+          "description": "将现有3个FAQ扩展为分类的故障排除指南,增加清晰的分类和目录",
+          "estimated_time": "15 min",
+          "status": "completed",
+          "dependencies": ["2.1", "2.2", "2.3", "2.4", "2.5", "2.6", "2.7"],
+          "notes": "完成README.md FAQ章节重构:1) 将'常见问题'重命名为'故障排除指南';2) 添加故障排除文档目录表格(7个分类文档);3) 添加快速诊断流程(4步骤检查清单);4) 按类别组织常见问题(连接类/数据类/服务类);5) 每个问题使用details折叠展示,提供快速检查命令和详细文档链接;6) 在文档索引中添加故障排除分类;7) 创建docs/troubleshooting/README.md索引文件。"
+        },
+        {
+          "subtask_id": "3.2",
+          "title": "添加新的FAQ内容",
+          "description": "将所有新编写的FAQ内容添加到README.md的常见问题章节",
+          "estimated_time": "20 min",
+          "status": "completed",
+          "dependencies": ["3.1"],
+          "notes": "完成README.md FAQ内容扩展。新增FAQ条目: 1) 后端服务启动失败-环境变量缺失 2) 数据库连接失败 3) 合约订阅失败/价格显示NaN 4) 行情数据延迟 5) API返回500内部错误 6) API返回422参数验证失败 7) 通知发送失败-服务器无响应/超时 8) 锁仓触发条件不满足 9) 健康检查异常。README.md现共有17个FAQ条目,超过10+要求。每个FAQ包含症状描述、快速检查命令、常见原因和详细文档链接。"
+        },
+        {
+          "subtask_id": "3.3",
+          "title": "添加快速诊断指南",
+          "description": "添加一个快速诊断流程图或检查清单,帮助用户快速定位问题",
+          "estimated_time": "15 min",
+          "status": "completed",
+          "dependencies": ["3.2"],
+          "notes": "添加了完整的快速诊断指南到 README.md 和 docs/troubleshooting/README.md: 1) README.md 新增一分钟问题定位检查清单(5步快速排查表格)、问题诊断决策树(text-based flowchart覆盖4大问题类别)、快速诊断命令大全(可折叠展示)、按问题类型快速跳转表格; 2) docs/troubleshooting/README.md 新增30秒快速诊断命令、问题诊断检查清单(基础+分类)、诊断决策树。"
+        }
+      ]
+    },
+    {
+      "phase_id": "phase-4",
+      "name": "验证和完善",
+      "description": "验证文档的准确性和可读性",
+      "status": "pending",
+      "subtasks": [
+        {
+          "subtask_id": "4.1",
+          "title": "验证命令和代码示例",
+          "description": "确保所有命令和代码示例可以正确执行",
+          "estimated_time": "15 min",
+          "status": "completed",
+          "dependencies": ["3.3"],
+          "notes": "Verified all commands and code examples in troubleshooting documentation. Confirmed: API endpoints match main.py, config structure matches config.py, test scripts exist, notification.py behavior documented correctly. Fixed all FAQ document dates from 2024-12-24 to 2025-12-24."
+        },
+        {
+          "subtask_id": "4.2",
+          "title": "检查文档格式和链接",
+          "description": "检查Markdown格式、内部链接是否正确",
+          "estimated_time": "10 min",
+          "status": "pending",
+          "dependencies": ["4.1"],
+          "notes": ""
+        },
+        {
+          "subtask_id": "4.3",
+          "title": "更新build-progress.txt",
+          "description": "记录完成状态和任何需要注意的事项",
+          "estimated_time": "5 min",
+          "status": "pending",
+          "dependencies": ["4.2"],
+          "notes": ""
+        }
+      ]
+    }
+  ],
+  "new_faq_items": {
+    "连接问题": [
+      "WebSocket连接断开重连",
+      "天勤行情连接超时",
+      "数据库连接池耗尽"
+    ],
+    "服务问题": [
+      "后端服务启动失败",
+      "锁仓触发失败",
+      "换月任务卡住",
+      "通知发送失败"
+    ],
+    "数据问题": [
+      "极星数据推送失败",
+      "持仓数据不一致（已有,需扩展）",
+      "行情数据延迟"
+    ]
+  },
+  "success_criteria": [
+    "README.md的FAQ部分从3个问题扩展到至少10个问题",
+    "每个问题包含:问题描述、诊断步骤、解决方案",
+    "添加快速诊断指南帮助用户快速定位问题类型",
+    "所有命令和代码示例经过验证"
+  ],
+  "workflow_type": "documentation",
+  "services_involved": [
+    "backend/main.py",
+    "backend/services/tqsdk_service.py",
+    "backend/services/lock_trigger_service.py",
+    "backend/services/rollover_service.py",
+    "backend/engines/lock_engine.py",
+    "backend/utils/notification.py"
+  ],
+  "final_acceptance": [
+    "README.md FAQ部分扩展到10+个问题",
+    "每个FAQ包含完整的诊断步骤和解决方案",
+    "添加快速诊断指南",
+    "文档格式正确,所有链接有效"
+  ],
+  "spec_file": "spec.md",
+  "qa_status": {
+    "status": "pending",
+    "tests_passed": "",
+    "issues": ""
+  }
+}
