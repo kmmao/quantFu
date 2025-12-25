@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { Menu } from 'lucide-react'
 import { AppSidebar } from './app-sidebar'
+import { ThemeToggle } from './theme-toggle'
 import { Button } from './ui/button'
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet'
 
@@ -33,6 +34,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </SheetContent>
           </Sheet>
           <div className="flex-1 font-semibold">QuantFu</div>
+          <ThemeToggle />
         </header>
 
         {/* Main Content */}

@@ -25,8 +25,8 @@ export default defineConfig({
 
   // 共享配置
   use: {
-    // 基础 URL (使用环境变量或默认 3002)
-    baseURL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3002',
+    // 基础 URL (使用环境变量或默认 3005)
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3005',
 
     // 失败时截图
     screenshot: 'only-on-failure',
@@ -47,10 +47,10 @@ export default defineConfig({
   ],
 
   // 开发服务器配置
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3002',
-    reuseExistingServer: !process.env.CI,
+  webServer: process.env.PLAYWRIGHT_SKIP_WEBSERVER ? undefined : {
+    command: 'PORT=3005 npm run dev',
+    url: 'http://localhost:3005',
+    reuseExistingServer: true,
     timeout: 120 * 1000,
   },
 });
