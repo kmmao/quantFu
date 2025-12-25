@@ -24,6 +24,8 @@ import {
   Eye
 } from 'lucide-react'
 import { supabase, RolloverTask } from '@/lib/supabase'
+import { useToast } from '@/hooks/use-toast'
+import { useConfirm } from '@/hooks/use-confirm'
 import RolloverTaskDetailDialog from '@/components/RolloverTaskDetailDialog'
 import CreateRolloverTaskDialog from '@/components/CreateRolloverTaskDialog'
 
@@ -36,6 +38,8 @@ export default function RolloverTasksPage() {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [filter, setFilter] = useState<'all' | 'pending' | 'in_progress' | 'completed' | 'failed'>('all')
+  const { toast } = useToast()
+  const { confirm, ConfirmDialog } = useConfirm()
 
   useEffect(() => {
     fetchTasks()
@@ -64,7 +68,12 @@ export default function RolloverTasksPage() {
   }
 
   const handleExecuteTask = async (taskId: string) => {
-    if (!confirm('确定要执行该换月任务吗？')) return
+    const confirmed = await confirm({
+      title: '确认执行',
+      description: '确定要执行该换月任务吗？',
+      confirmText: '执行',
+    })
+    if (!confirmed) return
 
     try {
       const response = await fetch(`${BACKEND_URL}/api/rollover/tasks/${taskId}/execute`, {
@@ -72,18 +81,36 @@ export default function RolloverTasksPage() {
       })
       const data = await response.json()
       if (data.success) {
+        toast({
+          title: '执行成功',
+          description: '换月任务已开始执行',
+        })
         fetchTasks()
       } else {
-        alert('执行失败: ' + data.message)
+        toast({
+          title: '执行失败',
+          description: data.message,
+          variant: 'destructive',
+        })
       }
     } catch (error) {
       console.error('执行任务失败:', error)
-      alert('执行任务失败')
+      toast({
+        title: '执行失败',
+        description: '网络请求错误，请稍后重试',
+        variant: 'destructive',
+      })
     }
   }
 
   const handleCancelTask = async (taskId: string) => {
-    if (!confirm('确定要取消该换月任务吗？')) return
+    const confirmed = await confirm({
+      title: '确认取消',
+      description: '确定要取消该换月任务吗？取消后任务将不会执行。',
+      confirmText: '取消任务',
+      variant: 'destructive',
+    })
+    if (!confirmed) return
 
     try {
       const response = await fetch(`${BACKEND_URL}/api/rollover/tasks/${taskId}/cancel`, {
@@ -91,10 +118,25 @@ export default function RolloverTasksPage() {
       })
       const data = await response.json()
       if (data.success) {
+        toast({
+          title: '已取消',
+          description: '换月任务已取消',
+        })
         fetchTasks()
+      } else {
+        toast({
+          title: '取消失败',
+          description: data.message || '操作失败',
+          variant: 'destructive',
+        })
       }
     } catch (error) {
       console.error('取消任务失败:', error)
+      toast({
+        title: '取消失败',
+        description: '网络请求错误，请稍后重试',
+        variant: 'destructive',
+      })
     }
   }
 
@@ -384,6 +426,9 @@ export default function RolloverTasksPage() {
         onOpenChange={setCreateDialogOpen}
         onTaskCreated={fetchTasks}
       />
+
+      {/* 确认对话框 */}
+      <ConfirmDialog />
     </div>
   )
 }
