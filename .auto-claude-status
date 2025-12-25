@@ -1,25 +1,25 @@
 {
   "active": true,
-  "spec": "002-",
+  "spec": "002-alert-confirm-toast",
   "state": "building",
   "subtasks": {
-    "completed": 0,
-    "total": 0,
+    "completed": 6,
+    "total": 19,
     "in_progress": 1,
     "failed": 0
   },
   "phase": {
-    "current": "\u9a8c\u8bc1\u548c\u5b8c\u5584",
+    "current": "\u66ff\u6362\u7ec4\u4ef6\u4e2d\u7684 alert/confirm",
     "id": null,
-    "total": 3
+    "total": 5
   },
   "workers": {
     "active": 0,
     "max": 1
   },
   "session": {
-    "number": 17,
-    "started_at": "2025-12-24T02:36:59.664733"
+    "number": 8,
+    "started_at": "2025-12-25T12:22:07.272801"
   },
-  "last_update": "2025-12-24T03:34:10.554690"
+  "last_update": "2025-12-25T12:37:50.529120"
 }

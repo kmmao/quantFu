@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useConfirm } from '@/hooks/use-confirm'
 import {
   Dialog,
   DialogContent,
@@ -40,6 +41,7 @@ export default function ParamHistoryDialog({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [rollingBack, setRollingBack] = useState<string | null>(null)
+  const { confirm, ConfirmDialog } = useConfirm()
 
   const fetchHistory = useCallback(async () => {
     setLoading(true)
@@ -68,7 +70,14 @@ export default function ParamHistoryDialog({
   }, [open, fetchHistory])
 
   const handleRollback = async (paramKey: string) => {
-    if (!confirm(`确定要回滚参数 "${paramKey}" 到上一个版本吗?`)) {
+    const confirmed = await confirm({
+      title: '确认回滚',
+      description: `确定要回滚参数 "${paramKey}" 到上一个版本吗？`,
+      confirmText: '确认回滚',
+      cancelText: '取消',
+      variant: 'destructive'
+    })
+    if (!confirmed) {
       return
     }
 
@@ -139,6 +148,8 @@ export default function ParamHistoryDialog({
   }, {} as Record<string, StrategyParamHistory[]>)
 
   return (
+    <>
+    <ConfirmDialog />
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -227,5 +238,6 @@ export default function ParamHistoryDialog({
         )}
       </DialogContent>
     </Dialog>
+    </>
   )
 }
