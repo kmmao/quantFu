@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { useToast } from '@/hooks/use-toast'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -24,6 +25,7 @@ import { supabase } from '@/lib/supabase'
 import type { Contract, MainContractSwitch } from '@/lib/supabase'
 
 export default function ContractsPage() {
+  const { toast } = useToast()
   const [activeTab, setActiveTab] = useState<'list' | 'main' | 'expiring' | 'switches'>(
     'main'
   )
@@ -188,18 +190,28 @@ export default function ContractsPage() {
 
       if (error) throw error
 
-      alert('测试数据创建成功!')
+      toast({
+        title: '创建成功',
+        description: '测试数据已成功创建',
+      })
       fetchData()
     } catch (error: any) {
       console.error('创建测试数据失败:', error)
-      alert(`创建失败: ${error.message}`)
+      toast({
+        title: '创建失败',
+        description: error.message,
+        variant: 'destructive',
+      })
     }
   }
 
   const handleSyncContract = async (symbol: string) => {
     // 注意: 合约同步功能需要后端服务支持
     // 如果需要这个功能,请启动后端 FastAPI 服务
-    alert('合约同步功能需要后端服务支持\n请先启动后端 FastAPI 服务 (localhost:8888)')
+    toast({
+      title: '功能提示',
+      description: '合约同步功能需要后端服务支持，请先启动后端 FastAPI 服务 (localhost:8888)',
+    })
 
     // TODO: 如果后端服务已启动,取消注释下面的代码
     /*
@@ -211,14 +223,25 @@ export default function ContractsPage() {
       const data = await response.json()
 
       if (data.code === 200) {
-        alert('合约同步成功!')
+        toast({
+          title: '同步成功',
+          description: '合约信息已同步',
+        })
         fetchData()
       } else {
-        alert(`同步失败: ${data.message}`)
+        toast({
+          title: '同步失败',
+          description: data.message,
+          variant: 'destructive',
+        })
       }
     } catch (error) {
       console.error('同步合约失败:', error)
-      alert('同步失败,请稍后重试')
+      toast({
+        title: '同步失败',
+        description: '请稍后重试',
+        variant: 'destructive',
+      })
     }
     */
   }
