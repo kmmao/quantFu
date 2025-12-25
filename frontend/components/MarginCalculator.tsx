@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Calculator } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8888'
 
@@ -24,6 +25,7 @@ export default function MarginCalculator({
   open,
   onOpenChange,
 }: MarginCalculatorProps) {
+  const { toast } = useToast()
   const [formData, setFormData] = useState({
     account_id: '',
     symbol: '',
@@ -48,7 +50,11 @@ export default function MarginCalculator({
       !formData.price ||
       !formData.volume
     ) {
-      alert('请填写所有必填字段')
+      toast({
+        title: '表单验证失败',
+        description: '请填写所有必填字段',
+        variant: 'destructive',
+      })
       return
     }
 
@@ -68,11 +74,19 @@ export default function MarginCalculator({
       if (data.code === 200) {
         setResult(data.data)
       } else {
-        alert(`计算失败: ${data.message}`)
+        toast({
+          title: '计算失败',
+          description: data.message,
+          variant: 'destructive',
+        })
       }
     } catch (error) {
       console.error('计算保证金失败:', error)
-      alert('计算失败,请稍后重试')
+      toast({
+        title: '计算失败',
+        description: '请稍后重试',
+        variant: 'destructive',
+      })
     } finally {
       setLoading(false)
     }

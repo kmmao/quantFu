@@ -4,6 +4,8 @@ import * as React from 'react'
 import { RefreshCw, AlertCircle, Database, Plus, Edit, Trash2 } from 'lucide-react'
 
 import { supabase, type PositionSummary } from '@/lib/supabase'
+import { useToast } from '@/hooks/use-toast'
+import { useConfirm } from '@/hooks/use-confirm'
 import { Button } from '@/components/ui/button'
 import { PositionDialog } from '@/components/PositionDialog'
 import {
@@ -30,6 +32,8 @@ export default function PositionsPage() {
   const [error, setError] = React.useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = React.useState(false)
   const [editingPosition, setEditingPosition] = React.useState<any>(null)
+  const { toast } = useToast()
+  const { confirm, ConfirmDialog } = useConfirm()
 
   const fetchPositions = async () => {
     try {
@@ -106,7 +110,11 @@ export default function PositionsPage() {
       .single()
 
     if (!accountData) {
-      alert('未找到账户信息')
+      toast({
+        title: '操作失败',
+        description: '未找到账户信息',
+        variant: 'destructive',
+      })
       return
     }
 
@@ -125,7 +133,13 @@ export default function PositionsPage() {
 
   // 处理删除持仓
   const handleDelete = async (position: PositionSummary) => {
-    if (!confirm(`确定要删除 ${position.variety_name} ${position.symbol} 的持仓吗?`)) {
+    const confirmed = await confirm({
+      title: '确认删除',
+      description: `确定要删除 ${position.variety_name} ${position.symbol} 的持仓吗？此操作不可恢复。`,
+      confirmText: '删除',
+      variant: 'destructive',
+    })
+    if (!confirmed) {
       return
     }
 
@@ -138,7 +152,11 @@ export default function PositionsPage() {
         .single()
 
       if (!accountData) {
-        alert('未找到账户信息')
+        toast({
+          title: '删除失败',
+          description: '未找到账户信息',
+          variant: 'destructive',
+        })
         return
       }
 
@@ -150,9 +168,17 @@ export default function PositionsPage() {
 
       if (error) throw error
 
+      toast({
+        title: '删除成功',
+        description: `${position.variety_name} ${position.symbol} 的持仓已删除`,
+      })
       fetchPositions()
     } catch (err) {
-      alert(`删除失败: ${err instanceof Error ? err.message : '未知错误'}`)
+      toast({
+        title: '删除失败',
+        description: err instanceof Error ? err.message : '未知错误',
+        variant: 'destructive',
+      })
     }
   }
 
@@ -424,6 +450,9 @@ export default function PositionsPage() {
         position={editingPosition}
         onSuccess={handleDialogSuccess}
       />
+
+      {/* 确认对话框 */}
+      <ConfirmDialog />
     </div>
   )
 }

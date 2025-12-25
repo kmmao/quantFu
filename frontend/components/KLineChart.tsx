@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import type { UTCTimestamp, CandlestickData, HistogramData, SeriesMarker, Time } from 'lightweight-charts'
 
 interface KLineData {
   time: number
@@ -36,7 +37,7 @@ export default function KLineChart({ data, markers = [], height = 400 }: KLineCh
     if (!chartContainerRef.current || data.length === 0) return
 
     // 动态导入 lightweight-charts (仅客户端)
-    import('lightweight-charts').then((LightweightCharts) => {
+    import('lightweight-charts').then(({ createChart, ColorType, CandlestickSeries, HistogramSeries, createSeriesMarkers }) => {
       if (!chartContainerRef.current) return
 
       // 清理旧图表
@@ -45,9 +46,9 @@ export default function KLineChart({ data, markers = [], height = 400 }: KLineCh
       }
 
       // 创建图表
-      const chart = LightweightCharts.createChart(chartContainerRef.current, {
+      const chart = createChart(chartContainerRef.current, {
         layout: {
-          background: { type: LightweightCharts.ColorType.Solid, color: 'white' },
+          background: { type: ColorType.Solid, color: 'white' },
           textColor: '#333',
         },
         width: chartContainerRef.current.clientWidth,
@@ -72,7 +73,7 @@ export default function KLineChart({ data, markers = [], height = 400 }: KLineCh
       chartRef.current = chart
 
       // 创建K线系列 (v5 API)
-      const candlestickSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
+      const candlestickSeries = chart.addSeries(CandlestickSeries, {
         upColor: '#26a69a',
         downColor: '#ef5350',
         borderVisible: false,
@@ -83,7 +84,7 @@ export default function KLineChart({ data, markers = [], height = 400 }: KLineCh
       candlestickSeriesRef.current = candlestickSeries
 
       // 创建成交量系列 (v5 API)
-      const volumeSeries = chart.addSeries(LightweightCharts.HistogramSeries, {
+      const volumeSeries = chart.addSeries(HistogramSeries, {
         color: '#26a69a',
         priceFormat: {
           type: 'volume',
@@ -100,12 +101,19 @@ export default function KLineChart({ data, markers = [], height = 400 }: KLineCh
         },
       })
 
-      // 设置数据
-      candlestickSeries.setData(data)
+      // 设置数据 - 转换时间戳类型
+      const candlestickData: CandlestickData[] = data.map(d => ({
+        time: d.time as UTCTimestamp,
+        open: d.open,
+        high: d.high,
+        low: d.low,
+        close: d.close,
+      }))
+      candlestickSeries.setData(candlestickData)
 
       // 设置成交量数据
-      const volumeData = data.map(d => ({
-        time: d.time,
+      const volumeData: HistogramData[] = data.map(d => ({
+        time: d.time as UTCTimestamp,
         value: d.volume,
         color: d.close >= d.open ? 'rgba(38, 166, 154, 0.5)' : 'rgba(239, 83, 80, 0.5)',
       }))
@@ -113,7 +121,11 @@ export default function KLineChart({ data, markers = [], height = 400 }: KLineCh
 
       // 设置标记 (v5 API)
       if (markers.length > 0) {
-        const seriesMarkers = LightweightCharts.createSeriesMarkers(candlestickSeries, markers)
+        const convertedMarkers: SeriesMarker<Time>[] = markers.map(m => ({
+          ...m,
+          time: m.time as UTCTimestamp,
+        }))
+        const seriesMarkers = createSeriesMarkers(candlestickSeries, convertedMarkers)
         // 保存到 ref 以便后续更新
         candlestickSeriesRef.current._markers = seriesMarkers
       }

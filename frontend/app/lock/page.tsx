@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useToast } from '@/hooks/use-toast'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -20,6 +21,7 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:888
 export default function LockManagementPage() {
   const [triggers, setTriggers] = useState<LockTrigger[]>([])
   const [loading, setLoading] = useState(true)
+  const { toast } = useToast()
 
   useEffect(() => {
     fetchTriggers()
@@ -47,14 +49,25 @@ export default function LockManagementPage() {
       const result = await response.json()
 
       if (result.code === 200) {
-        alert('锁仓执行成功!')
+        toast({
+          title: '执行成功',
+          description: '锁仓已成功执行'
+        })
         fetchTriggers()
       } else {
-        alert(`执行失败: ${result.message}`)
+        toast({
+          title: '执行失败',
+          description: result.message,
+          variant: 'destructive'
+        })
       }
     } catch (error) {
       console.error('执行锁仓失败:', error)
-      alert('执行失败,请稍后重试')
+      toast({
+        title: '执行失败',
+        description: '请稍后重试',
+        variant: 'destructive'
+      })
     }
   }
 

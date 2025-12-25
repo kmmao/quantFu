@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react'
 import { supabase, type Account, type Contract } from '@/lib/supabase'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { useToast } from '@/hooks/use-toast'
 
 export default function TestSupabasePage() {
+  const { toast } = useToast()
   const [connectionStatus, setConnectionStatus] = useState<'checking' | 'success' | 'error'>('checking')
   const [accounts, setAccounts] = useState<Account[]>([])
   const [contracts, setContracts] = useState<Contract[]>([])
@@ -72,7 +74,10 @@ export default function TestSupabasePage() {
       // 刷新账户列表
       await testConnection()
 
-      alert('测试账户创建成功！')
+      toast({
+        title: '创建成功',
+        description: '测试账户已成功创建',
+      })
     } catch (err: any) {
       console.error('创建账户错误:', err)
       setError(err.message)

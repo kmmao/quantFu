@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
+import { useToast } from '@/hooks/use-toast'
 import type { LockConfig } from '@/lib/supabase'
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8888'
@@ -31,6 +32,7 @@ export default function LockConfigDialog({
   config,
   onSuccess,
 }: LockConfigDialogProps) {
+  const { toast } = useToast()
   const [formData, setFormData] = useState({
     account_id: '',
     symbol: '',
@@ -104,15 +106,26 @@ export default function LockConfigDialog({
       const result = await response.json()
 
       if (result.code === 200) {
-        alert(config ? '配置更新成功!' : '配置创建成功!')
+        toast({
+          title: config ? '配置更新成功' : '配置创建成功',
+          description: config ? '锁仓配置已成功更新' : '锁仓配置已成功创建',
+        })
         onSuccess()
         onOpenChange(false)
       } else {
-        alert(`操作失败: ${result.message}`)
+        toast({
+          title: '操作失败',
+          description: result.message,
+          variant: 'destructive',
+        })
       }
     } catch (error) {
       console.error('保存配置失败:', error)
-      alert('保存失败,请稍后重试')
+      toast({
+        title: '保存失败',
+        description: '请稍后重试',
+        variant: 'destructive',
+      })
     } finally {
       setLoading(false)
     }

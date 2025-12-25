@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useToast } from '@/hooks/use-toast'
+import { useConfirm } from '@/hooks/use-confirm'
 import {
   Dialog,
   DialogContent,
@@ -43,6 +45,8 @@ export default function GroupMembersDialog({
   group,
   onMembersUpdated
 }: GroupMembersDialogProps) {
+  const { toast } = useToast()
+  const { confirm, ConfirmDialog } = useConfirm()
   const [members, setMembers] = useState<any[]>([])
   const [availableInstances, setAvailableInstances] = useState<StrategyInstance[]>([])
   const [loading, setLoading] = useState(true)
@@ -89,7 +93,11 @@ export default function GroupMembersDialog({
 
   const handleAddMember = async () => {
     if (!newMember.instance_id) {
-      alert('请选择策略实例')
+      toast({
+        title: '请选择策略实例',
+        description: '请先选择要添加的策略实例',
+        variant: 'destructive'
+      })
       return
     }
 
@@ -112,17 +120,32 @@ export default function GroupMembersDialog({
         onMembersUpdated?.()
         setNewMember({ instance_id: '', capital_allocation: '', position_limit: '', priority: '0' })
       } else {
-        alert('添加失败: ' + data.message)
+        toast({
+          title: '添加失败',
+          description: data.message,
+          variant: 'destructive'
+        })
       }
     } catch (error) {
-      alert('添加失败')
+      toast({
+        title: '添加失败',
+        description: '网络请求错误，请稍后重试',
+        variant: 'destructive'
+      })
     } finally {
       setAdding(false)
     }
   }
 
   const handleRemoveMember = async (instanceId: string) => {
-    if (!confirm('确定要移除该成员吗？')) return
+    const confirmed = await confirm({
+      title: '确认移除',
+      description: '确定要移除该成员吗？此操作无法撤销。',
+      confirmText: '确认移除',
+      cancelText: '取消',
+      variant: 'destructive'
+    })
+    if (!confirmed) return
 
     try {
       const response = await fetch(`/api/strategy-groups/${group.id}/members/${instanceId}`, {
@@ -135,11 +158,17 @@ export default function GroupMembersDialog({
         onMembersUpdated?.()
       }
     } catch (error) {
-      alert('移除失败')
+      toast({
+        title: '移除失败',
+        description: '网络请求错误，请稍后重试',
+        variant: 'destructive'
+      })
     }
   }
 
   return (
+    <>
+    <ConfirmDialog />
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -266,5 +295,6 @@ export default function GroupMembersDialog({
         </div>
       </DialogContent>
     </Dialog>
+    </>
   )
 }

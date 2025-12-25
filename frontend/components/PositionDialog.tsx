@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
+import { useToast } from '@/hooks/use-toast'
 import {
   Command,
   CommandEmpty,
@@ -76,6 +77,7 @@ export function PositionDialog({
   position,
   onSuccess,
 }: PositionDialogProps) {
+  const { toast } = useToast()
   const [loading, setLoading] = React.useState(false)
   const [accounts, setAccounts] = React.useState<Account[]>([])
   const [contracts, setContracts] = React.useState<Contract[]>([])
@@ -194,7 +196,11 @@ export function PositionDialog({
       onOpenChange(false)
     } catch (error) {
       console.error('保存失败:', error)
-      alert(`保存失败: ${error instanceof Error ? error.message : '未知错误'}`)
+      toast({
+        title: '保存失败',
+        description: error instanceof Error ? error.message : '未知错误',
+        variant: 'destructive',
+      })
     } finally {
       setLoading(false)
     }
