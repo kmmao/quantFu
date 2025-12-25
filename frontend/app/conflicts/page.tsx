@@ -38,10 +38,12 @@ import {
   AlertCircle
 } from 'lucide-react'
 import { supabase, StrategyConflict, StrategyGroup } from '@/lib/supabase'
+import { useToast } from '@/hooks/use-toast'
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8888'
 
 export default function ConflictsPage() {
+  const { toast } = useToast()
   const [groups, setGroups] = useState<StrategyGroup[]>([])
   const [selectedGroupId, setSelectedGroupId] = useState<string>('all')
   const [conflicts, setConflicts] = useState<StrategyConflict[]>([])
@@ -116,7 +118,11 @@ export default function ConflictsPage() {
 
   const handleResolve = async () => {
     if (!selectedConflict || !resolution.trim()) {
-      alert('请填写解决方案')
+      toast({
+        title: '表单验证失败',
+        description: '请填写解决方案',
+        variant: 'destructive'
+      })
       return
     }
 
@@ -129,16 +135,28 @@ export default function ConflictsPage() {
 
       const data = await response.json()
       if (data.success) {
+        toast({
+          title: '解决成功',
+          description: '冲突已成功标记为已解决'
+        })
         fetchConflicts()
         setResolveDialogOpen(false)
         setSelectedConflict(null)
         setResolution('')
       } else {
-        alert('解决失败: ' + (data.message || '未知错误'))
+        toast({
+          title: '解决失败',
+          description: data.message || '未知错误',
+          variant: 'destructive'
+        })
       }
     } catch (error) {
       console.error('解决冲突失败:', error)
-      alert('解决失败')
+      toast({
+        title: '解决失败',
+        description: '网络请求错误，请稍后重试',
+        variant: 'destructive'
+      })
     }
   }
 
