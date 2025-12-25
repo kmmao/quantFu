@@ -10,6 +10,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 
@@ -124,5 +128,51 @@ export function ThemeToggleItem() {
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
+  )
+}
+
+// 导出子菜单版本，用于嵌入其他 DropdownMenu 中
+export function ThemeSubmenu() {
+  const { theme, setTheme, resolvedTheme } = useTheme()
+  const [mounted, setMounted] = React.useState(false)
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // 使用 resolvedTheme 来确定当前实际显示的主题图标
+  const CurrentIcon = React.useMemo(() => {
+    if (!mounted) return null
+    return resolvedTheme === 'dark' ? Moon : Sun
+  }, [mounted, resolvedTheme])
+
+  return (
+    <DropdownMenuSub>
+      <DropdownMenuSubTrigger>
+        {mounted && CurrentIcon ? (
+          <CurrentIcon className="mr-2 h-4 w-4" />
+        ) : (
+          <div className="mr-2 h-4 w-4" />
+        )}
+        <span>主题</span>
+      </DropdownMenuSubTrigger>
+      <DropdownMenuPortal>
+        <DropdownMenuSubContent>
+          {themes.map(({ value, label, icon: ThemeIcon }) => (
+            <DropdownMenuItem
+              key={value}
+              onClick={() => setTheme(value)}
+              className="cursor-pointer"
+            >
+              <ThemeIcon className="mr-2 h-4 w-4" />
+              <span>{label}</span>
+              {theme === value && (
+                <Check className="ml-auto h-4 w-4" />
+              )}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuSubContent>
+      </DropdownMenuPortal>
+    </DropdownMenuSub>
   )
 }

@@ -39,6 +39,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { ThemeSubmenu } from '@/components/theme-toggle'
 
 // 导航菜单项类型
 type NavItem = {
@@ -251,6 +252,7 @@ export function AppSidebar() {
               <Settings className="mr-2 h-4 w-4" />
               <span>设置</span>
             </DropdownMenuItem>
+            <ThemeSubmenu />
             <DropdownMenuSeparator />
             <DropdownMenuItem className="text-red-600">
               <LogOut className="mr-2 h-4 w-4" />
