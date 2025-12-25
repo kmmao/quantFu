@@ -15,6 +15,8 @@ import {
 import { Plus, Settings, Edit, Trash2, RefreshCw } from 'lucide-react'
 import LockConfigDialog from '@/components/LockConfigDialog'
 import type { LockConfig } from '@/lib/supabase'
+import { useToast } from '@/hooks/use-toast'
+import { useConfirm } from '@/hooks/use-confirm'
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8888'
 
@@ -23,6 +25,8 @@ export default function LockConfigPage() {
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingConfig, setEditingConfig] = useState<LockConfig | null>(null)
+  const { toast } = useToast()
+  const { confirm, ConfirmDialog } = useConfirm()
 
   useEffect(() => {
     fetchConfigs()
@@ -51,7 +55,13 @@ export default function LockConfigPage() {
   }
 
   const handleDelete = async (configId: string) => {
-    if (!confirm('确定要删除此配置吗?')) return
+    const confirmed = await confirm({
+      title: '确认删除',
+      description: '确定要删除此配置吗？删除后无法恢复。',
+      confirmText: '删除',
+      variant: 'destructive',
+    })
+    if (!confirmed) return
 
     try {
       const response = await fetch(`${BACKEND_URL}/api/lock/configs/${configId}`, {
@@ -61,14 +71,25 @@ export default function LockConfigPage() {
       const result = await response.json()
 
       if (result.code === 200) {
-        alert('配置删除成功!')
+        toast({
+          title: '删除成功',
+          description: '锁仓配置已成功删除',
+        })
         fetchConfigs()
       } else {
-        alert(`删除失败: ${result.message}`)
+        toast({
+          title: '删除失败',
+          description: result.message,
+          variant: 'destructive',
+        })
       }
     } catch (error) {
       console.error('删除配置失败:', error)
-      alert('删除失败,请稍后重试')
+      toast({
+        title: '删除失败',
+        description: '请稍后重试',
+        variant: 'destructive',
+      })
     }
   }
 
@@ -250,6 +271,9 @@ export default function LockConfigPage() {
         config={editingConfig}
         onSuccess={fetchConfigs}
       />
+
+      {/* 确认对话框 */}
+      <ConfirmDialog />
     </main>
   )
 }
